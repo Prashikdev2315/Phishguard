@@ -1,0 +1,15 @@
+{
+  "_status": "PLACEHOLDER",
+  "_placeholder_note": "Real brand list built in Chunk 4 (Normalization and features) by the team from public phishing reports. D-6: owner TBD by M2.",
+  "_comment": "Top impersonated brand list. PRD §6.2 Group C.",
+  "_version": "0.0.0-placeholder",
+  "_schema": "fs1",
+  "_open_decision": "D-6 — owner TBD by M2. This seed list must be reviewed and expanded.",
+  "brands": [
+    "paypal", "apple", "microsoft", "google", "amazon",
+    "facebook", "netflix", "instagram", "twitter", "linkedin",
+    "chase", "wellsfargo", "bankofamerica", "citibank", "hsbc",
+    "dhl", "fedex", "ups", "usps", "docusign",
+    "dropbox", "adobe", "zoom", "steam", "ebay"
+  ]
+}

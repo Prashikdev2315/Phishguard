@@ -1,0 +1,330 @@
+{
+  "generated_at": "2026-11-14T23:20:18.001772Z",
+  "source_file": "C:\\Users\\dell\\Desktop\\7th sem\\cyber security\\Project\\Combined_Benign_Malicious_Dataset_CORRECTED.csv",
+  "source_sha256": "429d6048d1e53b244789c5649914b340017687415ba11ad8897617fcc7eac38f",
+  "psl_source": "C:\\Users\\dell\\Desktop\\7th sem\\cyber security\\Project\\phishguard\\lists\\psl.dat",
+  "total_rows": 11000,
+  "class_counts": {
+    "Benign": 6500,
+    "Malicious": 4500
+  },
+  "null_url": 0,
+  "null_type": 0,
+  "exact_duplicates": 152,
+  "normalized_duplicates": 153,
+  "cross_class_norm_dups": 0,
+  "scheme_less_count": 5060,
+  "non_ascii_count": 1,
+  "punycode_host_count": 4,
+  "ip_host_count": 119,
+  "norm_error_count": 0,
+  "norm_error_breakdown": {},
+  "url_length_stats": {
+    "Benign": {
+      "mean": 27.03,
+      "median": 25.0,
+      "min": 11,
+      "max": 281,
+      "p95": 44.0
+    },
+    "Malicious": {
+      "mean": 69.71,
+      "median": 59.0,
+      "min": 15,
+      "max": 779,
+      "p95": 170.0
+    }
+  },
+  "top_20_domains": {
+    "Benign": [
+      {
+        "domain": "microsoft.com",
+        "count": 221
+      },
+      {
+        "domain": "apple.com",
+        "count": 173
+      },
+      {
+        "domain": "tiktokcdn.com",
+        "count": 100
+      },
+      {
+        "domain": "google.com",
+        "count": 80
+      },
+      {
+        "domain": "azure.com",
+        "count": 70
+      },
+      {
+        "domain": "com.akadns.net",
+        "count": 66
+      },
+      {
+        "domain": "office.com",
+        "count": 58
+      },
+      {
+        "domain": "office.net",
+        "count": 53
+      },
+      {
+        "domain": "tiktokv.com",
+        "count": 42
+      },
+      {
+        "domain": "yahoo.com",
+        "count": 39
+      },
+      {
+        "domain": "live.com",
+        "count": 34
+      },
+      {
+        "domain": "facebook.com",
+        "count": 29
+      },
+      {
+        "domain": "tiktokcdn-us.com",
+        "count": 29
+      },
+      {
+        "domain": "aaplimg.com",
+        "count": 25
+      },
+      {
+        "domain": "bytefcdn-oversea.com",
+        "count": 25
+      },
+      {
+        "domain": "webex.com",
+        "count": 23
+      },
+      {
+        "domain": "worldfcdn2.com",
+        "count": 23
+      },
+      {
+        "domain": "msedge.net",
+        "count": 22
+      },
+      {
+        "domain": "tmall.com",
+        "count": 22
+      },
+      {
+        "domain": "googleusercontent.com",
+        "count": 21
+      }
+    ],
+    "Malicious": [
+      {
+        "domain": "000webhostapp.com",
+        "count": 641
+      },
+      {
+        "domain": "9779.info",
+        "count": 186
+      },
+      {
+        "domain": "google.com",
+        "count": 116
+      },
+      {
+        "domain": "beget.tech",
+        "count": 48
+      },
+      {
+        "domain": "pastehtml.com",
+        "count": 43
+      },
+      {
+        "domain": "alexanderperfumery.com",
+        "count": 21
+      },
+      {
+        "domain": "grasslandhotel.com.vn",
+        "count": 20
+      },
+      {
+        "domain": "hrdeptselfservice.com",
+        "count": 20
+      },
+      {
+        "domain": "saralaska.org",
+        "count": 17
+      },
+      {
+        "domain": "tanlaonline.com",
+        "count": 15
+      },
+      {
+        "domain": "pubyun.com",
+        "count": 14
+      },
+      {
+        "domain": "arvixeshared.com",
+        "count": 13
+      },
+      {
+        "domain": "club-liner.de",
+        "count": 13
+      },
+      {
+        "domain": "hc360.com",
+        "count": 12
+      },
+      {
+        "domain": "3cf.ru",
+        "count": 12
+      },
+      {
+        "domain": "chinesevie.com",
+        "count": 12
+      },
+      {
+        "domain": "moretonenterprises.co.uk",
+        "count": 12
+      },
+      {
+        "domain": "xpj5988.com",
+        "count": 11
+      },
+      {
+        "domain": "esy.es",
+        "count": 11
+      },
+      {
+        "domain": "webnode.com",
+        "count": 11
+      }
+    ]
+  },
+  "domains_in_both_classes": [
+    "alicdn.com",
+    "aliyun.com",
+    "baidu.com",
+    "bit.ly",
+    "blogspot.com.br",
+    "bootstrapcdn.com",
+    "cnzz.com",
+    "comcast.net",
+    "facebook.com",
+    "fonts.googleapis.com",
+    "free.fr",
+    "google.com",
+    "interia.pl",
+    "libero.it",
+    "maps.googleapis.com",
+    "qq.com",
+    "rb.gy",
+    "sapo.pt",
+    "secureserver.net",
+    "storage.googleapis.com",
+    "t.co",
+    "videodownloadconverter.com",
+    "weebly.com",
+    "youku.com",
+    "youtube.com"
+  ],
+  "domains_in_both_count": 25,
+  "bare_homepage_share": {
+    "Benign": 0.9869,
+    "Malicious": 0.2696
+  },
+  "hosting_platform_share": {
+    "Benign": {
+      "count": 4,
+      "total": 6500,
+      "share": 0.0006
+    },
+    "Malicious": {
+      "count": 656,
+      "total": 4500,
+      "share": 0.1458
+    }
+  },
+  "shortcut_rule": {
+    "rule": "url_length <= 40 AND is_https \u2192 Benign",
+    "threshold_url_length": 40,
+    "tp": 2428,
+    "fp": 71,
+    "fn": 4072,
+    "tn": 4429,
+    "accuracy": 0.6234,
+    "note": "Shortcut rule; not a model. Used to illustrate dataset separability."
+  },
+  "shortcut_baseline": {
+    "description": "Depth-2 decision tree on deployable features (scheme-stripped url_length, has_path, and TLD one-hot). 80/20 grouped split by registrable_domain, seed 42.",
+    "split": "80/20 grouped by registrable_domain",
+    "seed": 42,
+    "max_depth": 2,
+    "tld_min_rows": 30,
+    "num_hot_tlds": 27,
+    "train_size": 8780,
+    "test_size": 2220,
+    "group_overlap_count": 0,
+    "group_overlap_ok": true,
+    "balanced_accuracy_deployable": 0.8526,
+    "balanced_accuracy_with_https": 0.8526,
+    "balanced_accuracy": 0.8526,
+    "note": "Deployable baseline uses scheme-stripped length, has_path, and TLD (is_https dropped per N-13). Comparison baseline with is_https included for audit. If baseline reaches \u2265 95% balanced accuracy, PRD \u00a77.2 step 4 requires stopping before model work.",
+    "gate_g1_risk": false
+  },
+  "review_sample": {
+    "path": "C:\\Users\\dell\\Desktop\\7th sem\\cyber security\\Project\\phishguard\\data\\review_sample.csv",
+    "counts": {
+      "Benign": 100,
+      "Malicious": 100
+    }
+  },
+  "scheme_analysis": {
+    "Benign": {
+      "total": 6500,
+      "schemeless": 4000,
+      "schemeless_share": 0.6154,
+      "http": 13,
+      "http_share": 0.002,
+      "https": 2487,
+      "https_share": 0.3826
+    },
+    "Malicious": {
+      "total": 4500,
+      "schemeless": 1060,
+      "schemeless_share": 0.2356,
+      "http": 2829,
+      "http_share": 0.6287,
+      "https": 611,
+      "https_share": 0.1358
+    }
+  },
+  "schemeless_patterns": {
+    "Benign": [
+      {
+        "pattern": "bare_domain",
+        "count": 4000
+      }
+    ],
+    "Malicious": [
+      {
+        "pattern": "bare_domain",
+        "count": 1043
+      },
+      {
+        "pattern": "domain_path",
+        "count": 17
+      }
+    ]
+  },
+  "notable_urls": {
+    "non_ascii_urls": [
+      {
+        "index": 8597,
+        "label": "Malicious",
+        "url_repr": "'\\xa0http://www.isatechnology.com/training/49zvkrPOeNa346BZfzRNtmmpCNcRmGQHwN9bDIZ7aqABWR/'"
+      }
+    ],
+    "norm_error_urls": []
+  }
+}

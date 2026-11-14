@@ -1,0 +1,11 @@
+{
+  "_status": "PLACEHOLDER",
+  "_placeholder_note": "Real action words list built in Chunk 4 (Normalization and features) from phishing-report analysis.",
+  "_comment": "Action words list. PRD §6.2 Group C.",
+  "_version": "0.0.0-placeholder",
+  "_schema": "fs1",
+  "words": [
+    "click", "submit", "validate", "authenticate", "recover",
+    "reset", "activate", "unlock", "restore", "reactivate"
+  ]
+}

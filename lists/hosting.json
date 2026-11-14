@@ -1,0 +1,24 @@
+{
+  "_comment": "Free / multi-tenant hosting platforms. PRD Appendix A. Never allowlistable at domain level.",
+  "_version": "1.0.0",
+  "_schema": "fs1",
+  "_rule": "A tenant host (e.g. user.github.io) is trusted individually; the root domain is never allowlisted.",
+  "platforms": [
+    "000webhostapp.com",
+    "sites.google.com",
+    "github.io",
+    "pages.dev",
+    "workers.dev",
+    "netlify.app",
+    "vercel.app",
+    "blogspot.com",
+    "weebly.com",
+    "wixsite.com",
+    "herokuapp.com",
+    "firebaseapp.com",
+    "web.app",
+    "glitch.me",
+    "duckdns.org",
+    "ngrok.io"
+  ]
+}

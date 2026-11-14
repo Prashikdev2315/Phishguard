@@ -1,0 +1,13 @@
+{
+  "_comment": "Default band thresholds. Set by calibration in Chunk 6 (§7.6). Do not edit manually.",
+  "schema": "fs1",
+  "model_version": "pg-model-unset",
+  "T_safe_max": 34,
+  "T_suspicious_min": 35,
+  "T_suspicious_max": 69,
+  "T_high_risk_min": 70,
+  "T_block": 70,
+  "T_warn": 35,
+  "set_by": "default",
+  "set_at": "chunk-1-scaffold"
+}

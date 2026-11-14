@@ -1,0 +1,9 @@
+{
+  "_comment": "Sensitive words seed list. PRD §6.2 Group C. Extend with data-driven review in Chunk 4.",
+  "_version": "1.0.0",
+  "_schema": "fs1",
+  "words": [
+    "login", "signin", "verify", "secure", "account",
+    "update", "password", "confirm", "banking", "wallet"
+  ]
+}

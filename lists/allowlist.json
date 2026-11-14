@@ -1,0 +1,9 @@
+{
+  "_status": "PLACEHOLDER",
+  "_placeholder_note": "Real allowlist built in Chunk 2 (Dataset profile) by ml/profile.py from the Tranco top-5000 list, minus hosting platforms, URL shorteners, and domains malicious in D1. Must stay under 100 KB.",
+  "_comment": "Default allowlist. PRD §7.2.",
+  "_version": "0.0.0-placeholder",
+  "_generated_at": "pending-chunk-2",
+  "_source": "Tranco top-5000 minus hosting platforms, URL shorteners, and domains malicious in D1",
+  "domains": []
+}

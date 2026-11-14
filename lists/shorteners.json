@@ -1,0 +1,16 @@
+{
+  "_comment": "URL shortener domains. PRD Appendix A.",
+  "_version": "1.0.0",
+  "_schema": "fs1",
+  "shorteners": [
+    "bit.ly",
+    "tinyurl.com",
+    "t.co",
+    "goo.gl",
+    "ow.ly",
+    "is.gd",
+    "cutt.ly",
+    "rebrand.ly",
+    "shorturl.at"
+  ]
+}
