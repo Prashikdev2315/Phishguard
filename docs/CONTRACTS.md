@@ -127,6 +127,21 @@ Frozen in Chunk 7. Recorded here for reference.
 | Version prefix | `pg-model-{semver}` |
 | Target size    | < 2 MB  |
 
+The v1 payload layout is:
+
+1. `PGM1` magic (4 bytes), format version (`uint8`), and little-endian JSON
+   header length (`uint32`).
+2. Canonical UTF-8 JSON header containing the `fs1` schema, model version,
+   feature count, sample count, selector/classifier, section offsets, thresholds,
+   calibration parameters, and source/binary hashes.
+3. zlib-compressed typed arrays: MinMaxScaler `min_` and `scale_` (`float32`),
+   selected feature indices (`uint16`), and RandomForest tree node arrays.
+
+RandomForest nodes contain left/right child indices (`int32`), feature indices
+(`int16`), split thresholds (`float32`), and malicious-leaf probabilities
+(`float32`). The joblib file remains the Python oracle; `model.bin` contains no
+pickle data.
+
 ---
 
 ## 8. Reason-code identifiers

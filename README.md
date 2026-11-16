@@ -18,7 +18,7 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 | 4 | **Normalization & Features** | FS1 feature extraction, 50-feature specification, implementation and unit tests | ✅ Complete |
 | 5 | **Benchmark** | 25-run benchmark (5 selectors × 5 classifiers, 3 seeds × 5 folds), leakage guards, model selection, Gate G-1 & G-4 evaluation | ✅ Complete |
 | 6 | **Calibration & Gates** | Threshold calibration and Gates G-1 to G-8, including adversarial evaluation | ✅ Implemented; external evidence pending |
-| 7 | **Export** | Binary model packager (`model.bin`, `PGM1`), manifest and joblib oracle | 📋 Queued |
+| 7 | **Export** | Binary model packager (`model.bin`, `PGM1`), manifest and joblib oracle | ✅ Implemented |
 | 8 | **TypeScript Port** | On-device TypeScript runtime and Python/TypeScript parity tests (G-5) | 📋 Queued |
 | 9 | **Extension Core** | Service-worker navigation pipeline, cache, allowlist and override flow | 📋 Queued |
 | 10 | **User Interface** | Popup, options page, warning interstitial, about and history pages | 📋 Queued |
@@ -33,6 +33,7 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 - Total test suite: 164 unit, security, and pipeline tests all passing.
 - Chunk 6 calibration is implemented in `ml/evaluate.py`; the generated report is `ml/report/calibration_D1.md`.
 - Current Chunk 6 results: G-1, G-4, G-7, and D1 adversarial G-8 pass; G-2 fails on D1 recall; G-3, G-5, and G-6 remain unmeasurable until E1/E2, TypeScript, and browser evidence are available.
+- Chunk 7 exports `extension/public/model.bin` in the compact PGM1 format (under 2 MB) and updates `ml/models/model.manifest.json` with binary integrity metadata.
 
 ---
 
