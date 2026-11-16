@@ -119,13 +119,30 @@ Risk band formula: `risk = round(100 × p)`
 
 ## 7. Model binary format
 
-Frozen in Chunk 7. Recorded here for reference.
+The shipped `extension/public/model.bin` is a pickle-free, little-endian
+binary model package. Its format is frozen in Chunk 7.
 
-| Field          | Value   |
-|----------------|---------|
-| Magic bytes    | `PGM1`  |
-| Version prefix | `pg-model-{semver}` |
-| Target size    | < 2 MB  |
+| Prefix field | Encoding |
+|---|---|
+| Magic | ASCII `PGM1` (4 bytes) |
+| Format version | `uint8`, value `1` |
+| Header length | `uint32`, little-endian |
+| Header | Canonical UTF-8 JSON |
+| Payload | Level-9 zlib-compressed bytes |
+
+The JSON header contains `schema=fs1`, `model_version=pg-model-1.0.0`,
+`feature_count=50`, `sample_count=7781`, `k=20`, `selector=rf_importance`,
+`classifier=rf`, payload sizes, section offsets and lengths, calibration
+metadata, thresholds, the joblib oracle path, and the source-model SHA-256.
+
+The uncompressed payload sections are, in order, `scaler_min` (50 float32
+values), `scaler_scale` (50 float32 values), `selected_indices` (20 uint16
+values), and `forest`. The forest contains exactly 200 trees. Each tree is
+encoded as `node_count` (`uint32`) followed by `children_left` and
+`children_right` (`int32`), `feature` (`int16`), `threshold` (`float32`), and
+leaf malicious probabilities (`float32`) arrays of `node_count` elements.
+Tree probabilities are averaged for inference after MinMax scaling and feature
+selection. The final file must be strictly smaller than 2 MiB.
 
 ---
 
