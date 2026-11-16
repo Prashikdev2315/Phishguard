@@ -169,7 +169,7 @@ Frozen in Chunk 1. Source: PRD §6.4. Must match exactly in Python and TypeScrip
 
 ## 9. `ml/normalize.py` behavior contract
 
-Frozen in Chunk 2. Source: PRD §6.1 (N-01 to N-12).
+Frozen in Chunk 2. Source: PRD §6.1 (N-01 to N-13).
 TypeScript port (Chunk 8) must produce identical outputs; verified by PAR-01.
 
 ### Return type: `NormalizeResult` fields

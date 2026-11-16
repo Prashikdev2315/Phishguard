@@ -19,7 +19,7 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 | 5 | **Benchmark** | 25-run benchmark (5 selectors × 5 classifiers, 3 seeds × 5 folds), leakage guards, model selection, Gate G-1 & G-4 evaluation | ✅ Complete |
 | 6 | **Calibration & Gates** | Threshold calibration and Gates G-1 to G-8, including adversarial evaluation | ✅ Implemented; external evidence pending |
 | 7 | **Export** | Binary model packager (`model.bin`, `PGM1`), manifest and joblib oracle | ✅ Complete |
-| 8 | **TypeScript Port** | On-device TypeScript runtime and Python/TypeScript parity tests (G-5) | 📋 Queued |
+| 8 | **TypeScript Port** | On-device TypeScript runtime and Python/TypeScript parity tests (G-5) | ✅ Implemented; exhaustive parity pending |
 | 9 | **Extension Core** | Service-worker navigation pipeline, cache, allowlist and override flow | 📋 Queued |
 | 10 | **User Interface** | Popup, options page, warning interstitial, about and history pages | 📋 Queued |
 | 11 | **Hardening** | Performance target (<20 ms), CSP compliance, accessibility and security testing | 📋 Queued |
@@ -30,10 +30,11 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 - Cleaned D1 dataset generated: 9,677 rows (6,170 Benign, 3,507 Malicious) across 80/20 domain-grouped splits (7,781 train / 1,896 test) with 0 domain overlap.
 - Chunk 5 25-run benchmark completed: shortcut baseline is 84.25% balanced accuracy; Gate G-1 passed (+6.43 pp margin) and Gate G-4 passed (<1.2 pp gap).
 - Best model (rf_importance selector × RandomForest classifier) achieved 90.68% hold-out balanced accuracy (CV: 0.9123 ± 0.0111). Saved to ml/models/best_model.joblib.
-- Total test suite: 186 unit, security, pipeline, robustness, and export tests all passing.
+- Total test suite: 187 unit, security, pipeline, robustness, export, and parity-gate tests all passing.
 - Chunk 6 calibration is implemented in `ml/evaluate.py`; the generated report is `ml/report/calibration_D1.md`.
-- Current Chunk 6 results: G-1, G-4, and G-7 pass; G-2 and G-8 fail on the deterministic D1 evaluation; G-3, G-5, and G-6 remain unmeasurable until E1/E2, TypeScript, and browser evidence are available. The train-only symmetric augmentation experiment is documented in `ml/report/robustness_comparison_D1.md` and was rejected because path-padding drops worsened.
+- Current Chunk 6 results: G-1, G-4, and G-7 pass; G-2 and G-8 fail on the deterministic D1 evaluation; G-3 and G-6 remain unmeasurable until E1 and browser evidence are available. The train-only symmetric augmentation experiment is documented in `ml/report/robustness_comparison_D1.md` and was rejected because path-padding drops worsened.
 - Chunk 7 export is complete: `extension/public/model.bin` uses the frozen PGM1 format, is 1,590,495 bytes, and matches the SHA-256 recorded in `ml/models/model.manifest.json`; Python binary-tree parity tests pass.
+- Chunk 8 TypeScript modules and PGM1 inference are implemented; typecheck, Vitest, and the Python parity-gate smoke test pass. Exhaustive 1,896-URL G-5 parity and PF-01 performance evidence remain pending.
 
 ---
 

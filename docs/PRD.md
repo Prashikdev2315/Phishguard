@@ -72,7 +72,7 @@ These targets are initial. Re-baseline them after the first honest benchmark (M2
 
 | Release | Contents |
 | --- | --- |
-| **v1 (MVP)** | On-device URL model (51 features), allowlists, badge, popup, High-Risk interstitial with override, settings, local history, about/model card, first-run page, offline training and benchmark pipeline, optional reference API |
+| **v1 (MVP)** | On-device URL model (50 features), allowlists, badge, popup, High-Risk interstitial with override, settings, local history, about/model card, first-run page, offline training and benchmark pipeline, optional reference API |
 | **v1.1** | Optional WHOIS enrichment through a local backend (second-stage model) and the WHOIS ablation, in-page banner polish, local stats view, one-click FP/FN report through an issue template, batch API |
 | **v2** | Lightweight DOM signals (password field on an unfamiliar domain, form-action mismatch, brand or favicon mismatch), blocklist updates shipped with releases, Firefox, managed policy |
 
@@ -82,7 +82,7 @@ These targets are initial. Re-baseline them after the first honest benchmark (M2
 2. **Pre-filter.** Only http and https are scanned. Browser pages, extension pages, file, data, blob, about, and loopback or private-network hosts are skipped.
 3. **Normalize** the URL (6.1) and build the cache key.
 4. **Short-circuit** in this precedence: active override, user allowlist, default allowlist, cache hit.
-5. **Score.** Extract 51 features (6.2), scale, keep the selected Top-k, run the model, calibrate to a probability p, and set risk = round(100 × p).
+5. **Score.** Extract 50 features (6.2), scale, keep the selected Top-k, run the model, calibrate to a probability p, and set risk = round(100 × p).
 6. **Classify.** Safe < 35, Suspicious 35-69, High-Risk ≥ 70 (defaults; final cut-offs are set by the procedure in 7.6).
 7. **Act.** Safe: badge OK. Suspicious: badge `!`, detail in the popup, optional in-page banner. High-Risk: interstitial when enforcement is `block`; banner and badge when it is `warn_only`.
 8. **Record.** Cache the verdict, update counters, and write a history row (host only) unless the window is incognito.
@@ -102,8 +102,8 @@ P0 must ship, P1 should ship, P2 is optional. Every requirement has an acceptanc
 | ID | Pri | Requirement | Acceptance criterion | Tests |
 | --- | --- | --- | --- | --- |
 | FR-01 | P0 | **Scan trigger.** One pipeline run per top-level navigation; ignore subframes and restricted schemes. | One run per navigation; subframes, chrome://, extension, file, data, blob, about, and loopback pages are never scanned. | UT-01, E2E-05 |
-| FR-02 | P0 | **URL normalization** by rules N-01 to N-12 (6.1). | Python and TypeScript outputs are identical for every dataset URL and every table case, including the dataset's anomalous rows. | UT-01, PAR-01 |
-| FR-03 | P0 | **Feature extraction:** the 51 URL features in frozen order (6.2). | Hand-computed vectors match; a non-finite value yields `feature_error`; Python and TypeScript agree within 1e-6. | UT-02, PAR-01 |
+| FR-02 | P0 | **URL normalization** by rules N-01 to N-13 (6.1). | Python and TypeScript outputs are identical for every dataset URL and every table case, including the dataset's anomalous rows. | UT-01, PAR-01 |
+| FR-03 | P0 | **Feature extraction:** the 50 URL features in frozen order (6.2). | Hand-computed vectors match; a non-finite value yields `feature_error`; Python and TypeScript agree within 1e-6. | UT-02, PAR-01 |
 | FR-04 | P0 | **Local inference:** scale, select Top-k, classify, calibrate, risk 0-100. | Matches the Python oracle within 1 risk point on all dataset URLs; inference p95 < 15 ms warm. | PAR-02, PF-01 |
 | FR-05 | P0 | **Risk bands and enforcement mode** (`block` or `warn_only`); the default mode is set by gate G-3. | Boundaries 34/35/69/70 are correct; in `warn_only` a High-Risk page gets banner and badge, never the interstitial. | UT-03, E2E-02, E2E-04 |
 | FR-06 | P0 | **Reason codes:** up to 3 plain-language signals from deterministic rules (6.4). | Each rule fires on its trigger fixture and not on its negatives; a generic reason shows when no rule fires. | UT-06 |
@@ -127,7 +127,7 @@ P0 must ship, P1 should ship, P2 is optional. Every requirement has an acceptanc
 
 ## 6. Detection engine specification
 
-### 6.1 URL normalization (N-01 to N-12)
+### 6.1 URL normalization (N-01 to N-13)
 
 | Rule | Behavior |
 | --- | --- |
