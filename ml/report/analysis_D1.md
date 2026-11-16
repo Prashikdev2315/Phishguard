@@ -1,6 +1,6 @@
 # PhishGuard — Pre-Chunk-6 Analysis Report
 
-Generated: 2026-11-16T17:53:52.025760+00:00
+Generated: 2026-11-16T18:03:42.930295+00:00
 
 ---
 
@@ -10,10 +10,10 @@ Numbers sourced exclusively from `ml/report/benchmark_D1.json` and this script's
 
 | Gate | Name | Rule (abbreviated) | Result | Key number(s) |
 |------|------|--------------------|:------:|---------------|
-| G-1 | Shortcut margin | grouped-test balanced_acc > shortcut_baseline + 5 pp… | ✅ PASS | model 0.9068 vs baseline 0.8425 → +0.0643 pp |
+| G-1 | Shortcut margin | grouped-test balanced_acc > shortcut_baseline + 5 pp… | ✅ PASS | model 0.9068 vs baseline 0.8425 → +6.43 pp |
 | G-2 | Recall | recall >= 90% on D1 grouped hold-out; >= 80% on E2… | ❌ FAIL | D1 hold-out recall = 0.8668 |
 | G-3 | Block FPR | FPR <= 0.5% on E1 hold-out with allowlist off (95% Wilson in… | ⏳ N/M | D1 FPR ref = 0.0531 (E1 required) |
-| G-4 | Generalization gap | random-split minus grouped-split balanced_acc <= 5 pp… | ✅ PASS | max gap = 0.0226 pp across 25 runs |
+| G-4 | Generalization gap | random-split minus grouped-split balanced_acc <= 5 pp… | ✅ PASS | max gap = 2.26 pp across 25 runs |
 | G-5 | Python / TypeScript parity | risk within 1 point on 100% of dataset URLs and golden vecto… | ⏳ N/M | — |
 | G-6 | Performance | inference p95 < 15 ms warm; end-to-end < 30 ms warm; cold st… | ⏳ N/M | — |
 | G-7 | Calibration | ECE <= 0.05; Brier score reported… | ⏳ N/M | ECE (uncal) = 0.0146, Brier = 0.0603 |
@@ -26,21 +26,23 @@ Numbers sourced exclusively from `ml/report/benchmark_D1.json` and this script's
 
 ## 2. Finalist Model Selection
 
-**CV criterion:** Mean balanced accuracy across 5-fold StratifiedGroupKFold × 3 seeds (seeds 42, 43, 44) on training partition only.
+**CV criterion (finalist ranking):** Mean balanced accuracy across 5-fold StratifiedGroupKFold × 3 seeds (seeds 42, 43, 44) on training partition only.
 
-**Hold-out criterion:** Hold-out evaluated ONCE per combination (25 evaluations total). No hyper-parameter tuning on hold-out. Best model selected as highest hold-out balanced_accuracy among G-1-passing combinations.
+**Selection basis:** CV mean balanced_accuracy (5-fold StratifiedGroupKFold x 3 seeds) among G-1-passing combinations.
 
-**Hold-out evaluations:** 25 (one per combination, never re-used for tuning).
+**Hold-out (locked):** Hold-out (D1 test.csv) evaluated ONCE per combination (25 evaluations total). No hyper-parameter tuning on hold-out. Hold-out is locked — never re-used for selection, tuning, or any optimization decision.
+
+**Hold-out evaluations:** 25 total (one per combination, never re-used for selection or tuning).
 
 | Rank | Selector | Classifier | CV bal-acc mean±std | HO bal-acc | G-1 margin | G-4 gap |
 |-----:|----------|-----------|--------------------:|----------:|-----------:|--------:|
-| 1 | `rf_importance` | `rf` | 0.9123 ± 0.0111 | 0.9068 | +0.0643 pp | 0.0098 pp |
-| 1 | `rfe_rf` | `rf` | 0.9121 ± 0.0108 | 0.9060 | +0.0635 pp | 0.0111 pp |
-| 1 | `mutual_info` | `rf` | 0.9027 ± 0.0098 | 0.9049 | +0.0623 pp | 0.0012 pp |
-| 1 | `l1_lr` | `rf` | 0.9096 ± 0.0119 | 0.9018 | +0.0593 pp | 0.0112 pp |
-| 1 | `l1_lr` | `knn` | 0.9006 ± 0.0134 | 0.8989 | +0.0564 pp | 0.0053 pp |
-| 1 | `rf_importance` | `knn` | 0.8894 ± 0.0129 | 0.8952 | +0.0527 pp | 0.0046 pp |
-| 1 | `rfe_rf` | `knn` | 0.8897 ± 0.0128 | 0.8949 | +0.0524 pp | 0.0058 pp |
+| 1 | `rf_importance` | `rf` | 0.9123 ± 0.0111 | 0.9068 | +6.43 pp | 0.98 pp |
+| 2 | `rfe_rf` | `rf` | 0.9121 ± 0.0108 | 0.9060 | +6.35 pp | 1.11 pp |
+| 3 | `l1_lr` | `rf` | 0.9096 ± 0.0119 | 0.9018 | +5.93 pp | 1.12 pp |
+| 4 | `mutual_info` | `rf` | 0.9027 ± 0.0098 | 0.9049 | +6.23 pp | 0.12 pp |
+| 5 | `l1_lr` | `knn` | 0.9006 ± 0.0134 | 0.8989 | +5.64 pp | 0.53 pp |
+| 6 | `rfe_rf` | `knn` | 0.8897 ± 0.0128 | 0.8949 | +5.24 pp | 0.58 pp |
+| 7 | `rf_importance` | `knn` | 0.8894 ± 0.0129 | 0.8952 | +5.27 pp | 0.46 pp |
 
 ---
 
@@ -121,7 +123,7 @@ Trained on the same training partition with the same grouped 80/20 hold-out. **N
 | Hold-out recall | 0.8882 |
 | Hold-out FPR | 0.0563 |
 | Shortcut baseline | 0.8425 |
-| G-1 margin vs shortcut | +0.0734 pp |
+| G-1 margin vs shortcut | +7.34 pp |
 
 **Interpretation:** HGB is within 0.9 pp of the best RF candidate, suggesting the **feature set is the ceiling**, not the model family. Adding richer features (E1 deep links, WHOIS, visual) would likely improve all models equally.
 

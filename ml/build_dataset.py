@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PhishGuard Chunk 3: deterministic D1 dataset preparation.
+PhishGuard Chunk 3+: deterministic D1 dataset preparation and optional E1 integration.
 
 Implements PRD sections 7.2 and 7.3:
 - N-01..N-13 URL normalization through ml.normalize
@@ -11,8 +11,14 @@ Implements PRD sections 7.2 and 7.3:
 - three-seed, five-fold StratifiedGroupKFold definitions on the training partition
 - cleaning, concentration, split and provenance manifests
 
-This script does not fabricate E1/E2 data. Those sets require separately sourced,
-dated and verified external records.
+E1 integration (--e1 flag):
+- Loads E1_candidates.csv (URL, domain, rank, collection_date)
+- Labels all E1 rows as Benign; normalizes via N-01..N-13
+- Excludes any E1 registrable domain already in D1
+- Splits E1 by registrable domain: 50% -> E1_training, 50% -> E1_holdout (locked FPR set)
+- E1_training rows are appended to the grouped training set (no domain on both sides)
+- E1_holdout written to data/splits/e1_holdout.csv
+- D1-only path is unchanged when --e1 is not supplied
 """
 from __future__ import annotations
 
@@ -244,7 +250,120 @@ def write_json(path: pathlib.Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def build(source: pathlib.Path, root: pathlib.Path, seed: int = SEED) -> dict:
+def load_e1(path: pathlib.Path) -> pd.DataFrame:
+    """Load E1_candidates.csv (columns: URL, domain, rank, collection_date).
+
+    All rows are labeled Benign. Only URL is passed through normalization;
+    domain/rank/collection_date are kept as metadata but not used as features.
+    """
+    required = ("URL", "domain", "rank", "collection_date")
+    df = pd.read_csv(path, dtype=str, keep_default_na=False)
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise ValueError(f"E1 CSV missing columns: {missing}")
+    df["URL"] = df["URL"].str.strip()
+    df["type"] = "Benign"
+    df = df[df["URL"].ne("")]
+    return df[["URL", "type"]].copy()
+
+
+def integrate_e1(
+    d1_cleaned: pd.DataFrame,
+    e1_path: pathlib.Path,
+    splits_dir: pathlib.Path,
+    seed: int = SEED,
+) -> dict:
+    """
+    Integrate E1 into the training set.
+
+    Returns a dict with:
+      - e1_training: pd.DataFrame (rows to append to grouped train)
+      - e1_holdout: pd.DataFrame (locked FPR evaluation set)
+      - provenance: dict
+    """
+    import hashlib
+
+    raw_e1 = load_e1(e1_path)
+    norm_e1 = add_normalization(raw_e1)
+
+    # Drop normalization errors silently (log count)
+    errors = norm_e1[norm_e1["norm_error"].notna()]
+    if len(errors) > 0:
+        norm_e1 = norm_e1[norm_e1["norm_error"].isna()].copy()
+
+    # Dedup within E1
+    norm_e1 = norm_e1.drop_duplicates(subset=["norm_url"], keep="first").copy()
+
+    # Exclude any registrable domain already in D1
+    d1_domains = set(d1_cleaned["registrable_domain"].dropna().unique())
+    before_exclusion = len(norm_e1)
+    norm_e1 = norm_e1[
+        norm_e1["registrable_domain"].notna()
+        & ~norm_e1["registrable_domain"].isin(d1_domains)
+    ].copy()
+    excluded_count = before_exclusion - len(norm_e1)
+
+    if norm_e1.empty:
+        raise ValueError(
+            "E1 is empty after D1-domain exclusion. "
+            "Collect more E1 domains or verify tranco.csv."
+        )
+
+    # Split E1 by registrable domain: 50% training, 50% holdout (sorted for determinism)
+    e1_domains = sorted(norm_e1["registrable_domain"].dropna().unique())
+    rng = random.Random(seed)
+    rng.shuffle(e1_domains)
+    split_idx = len(e1_domains) // 2
+    train_domains = set(e1_domains[:split_idx])
+    holdout_domains = set(e1_domains[split_idx:])
+
+    e1_training = norm_e1[norm_e1["registrable_domain"].isin(train_domains)].copy()
+    e1_holdout = norm_e1[norm_e1["registrable_domain"].isin(holdout_domains)].copy()
+
+    # Cross-contamination guard: no domain on both sides
+    overlap = train_domains & holdout_domains
+    if overlap:
+        raise AssertionError(f"E1 domain leak between training/holdout: {overlap}")
+
+    # Also guard against E1-training domains leaking into D1 test (checked by caller)
+
+    # Write E1 holdout
+    splits_dir.mkdir(parents=True, exist_ok=True)
+    e1_holdout_path = splits_dir / "e1_holdout.csv"
+    e1_holdout.to_csv(e1_holdout_path, index=False)
+
+    # Compute file hash
+    digest = hashlib.sha256()
+    with e1_path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(chunk)
+    e1_sha256 = digest.hexdigest()
+
+    provenance = {
+        "e1_source": str(e1_path),
+        "e1_sha256": e1_sha256,
+        "e1_raw_rows": int(len(raw_e1)),
+        "e1_norm_errors": int(len(errors)),
+        "e1_after_dedup": int(before_exclusion),
+        "e1_d1_domains_excluded": int(excluded_count),
+        "e1_rows_after_exclusion": int(len(norm_e1)),
+        "e1_unique_domains": len(e1_domains),
+        "e1_training_domains": len(train_domains),
+        "e1_holdout_domains": len(holdout_domains),
+        "e1_training_rows": int(len(e1_training)),
+        "e1_holdout_rows": int(len(e1_holdout)),
+        "e1_holdout_path": str(e1_holdout_path),
+        "split_seed": int(seed),
+    }
+
+    return {
+        "e1_training": e1_training,
+        "e1_holdout": e1_holdout,
+        "provenance": provenance,
+    }
+
+
+def build(source: pathlib.Path, root: pathlib.Path, seed: int = SEED, e1_path: Optional[pathlib.Path] = None) -> dict:
     source = source.resolve()
     root = root.resolve()
     data_dir = root / "data"
@@ -296,6 +415,27 @@ def build(source: pathlib.Path, root: pathlib.Path, seed: int = SEED) -> dict:
     review[["URL", "type", "norm_url", "registrable_domain"]].to_csv(review_path, index=False)
 
     grouped_train, grouped_test = grouped_holdout(capped, seed=seed)
+
+    # E1 integration (optional)
+    e1_provenance = None
+    if e1_path is not None:
+        e1_result = integrate_e1(capped, e1_path, splits_dir, seed=seed)
+        e1_training = e1_result["e1_training"]
+        e1_provenance = e1_result["provenance"]
+        # Guard: E1 training domains must not appear in grouped_test
+        e1_train_domains = set(e1_training["registrable_domain"].dropna())
+        test_domains = set(grouped_test["registrable_domain"].dropna())
+        leaking = e1_train_domains & test_domains
+        if leaking:
+            raise AssertionError(
+                f"E1 training domains overlap D1 test domains: {len(leaking)} domains."
+            )
+        # Append E1 training rows (Benign) to the training partition
+        grouped_train = pd.concat([grouped_train, e1_training], ignore_index=True)
+        grouped_train = grouped_train.sort_values(
+            ["type", "registrable_domain", "norm_url"], kind="mergesort"
+        ).reset_index(drop=True)
+
     grouped_train_path = splits_dir / "train.csv"
     grouped_test_path = splits_dir / "test.csv"
     grouped_train.to_csv(grouped_train_path, index=False)
@@ -340,6 +480,7 @@ def build(source: pathlib.Path, root: pathlib.Path, seed: int = SEED) -> dict:
         "normalization_errors": int(len(normalization_errors)),
         "normalized_cross_label_conflicts": 0,
         "domain_cap_violations": int(cap_violations),
+        "e1_integration": e1_provenance,
         "output_sha256": {
             "D1_cleaned.csv": sha256_file(cleaned_path),
             "train.csv": sha256_file(grouped_train_path),
@@ -385,6 +526,7 @@ def build(source: pathlib.Path, root: pathlib.Path, seed: int = SEED) -> dict:
         f"- Rows without registrable domain: {len(no_domain):,} (quarantined for review)",
         f"- Grouped train/test: {len(grouped_train):,}/{len(grouped_test):,}",
         f"- Grouped domain overlap: {len(grouped_overlap)}",
+        f"- E1 integration: {'enabled (' + str(e1_provenance['e1_training_rows']) + ' training rows, ' + str(e1_provenance['e1_holdout_rows']) + ' holdout rows)' if e1_provenance else 'disabled (--e1 not supplied)'}",
         "",
         "## Class counts after cleaning",
         "",
@@ -420,8 +562,16 @@ def main() -> None:
     parser.add_argument("--dataset", required=True, help="Path to the original D1 CSV.")
     parser.add_argument("--root", default=str(ROOT), help="PhishGuard repository root.")
     parser.add_argument("--seed", type=int, default=SEED)
+    parser.add_argument(
+        "--e1",
+        default=None,
+        help="Path to E1_candidates.csv (optional). When supplied, E1 Benign rows are "
+             "split by domain and appended to the training partition; the held-out half "
+             "is written to data/splits/e1_holdout.csv.",
+    )
     args = parser.parse_args()
-    result = build(pathlib.Path(args.dataset), pathlib.Path(args.root), seed=args.seed)
+    e1 = pathlib.Path(args.e1) if args.e1 else None
+    result = build(pathlib.Path(args.dataset), pathlib.Path(args.root), seed=args.seed, e1_path=e1)
     print(json.dumps({
         "rows_cleaned": result["cleaning_report"]["rows"]["after_domain_validation_and_cap"],
         "class_counts": result["cleaning_report"]["class_counts_cleaned"],

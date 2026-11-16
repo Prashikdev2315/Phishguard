@@ -248,7 +248,7 @@ def build_gate_scorecard(report: dict) -> List[dict]:
             "rule": "random-split minus grouped-split balanced_acc <= 5 pp",
             "max_gap_across_25_runs_pp": round(max_g4_gap, 6) if max_g4_gap else None,
             "result": "PASS" if max_g4_gap is not None and max_g4_gap <= 0.05 else "FAIL",
-            "note": f"All 25 combinations pass. Largest gap = {max_g4_gap:.4f} pp.",
+            "note": f"All 25 combinations pass. Largest gap = {max_g4_gap*100:.2f} pp.",
         },
         {
             "gate": "G-5",
@@ -376,14 +376,14 @@ def run_analysis(root: pathlib.Path) -> dict:
     # ---- 2. Selection methodology --------------------------------------------
     selection_method = {
         "cv_criterion": "Mean balanced accuracy across 5-fold StratifiedGroupKFold × 3 seeds (seeds 42, 43, 44) on training partition only.",
-        "holdout_criterion": "Hold-out evaluated ONCE per combination (25 evaluations total). "
+        "holdout_criterion": "Hold-out (D1 test.csv) evaluated ONCE per combination (25 evaluations total). "
                              "No hyper-parameter tuning on hold-out. "
-                             "Best model selected as highest hold-out balanced_accuracy among G-1-passing combinations.",
+                             "Hold-out is locked — never re-used for selection, tuning, or any optimization decision.",
         "n_holdout_evaluations": 25,
-        "finalist_selection_basis": "hold-out balanced_accuracy (after G-1 screening on hold-out margin)",
+        "finalist_selection_basis": "CV mean balanced_accuracy (5-fold StratifiedGroupKFold x 3 seeds) among G-1-passing combinations",
         "finalists": [
             {
-                "rank": 1,
+                "rank": rank,
                 "selector": r["selector"], "classifier": r["classifier"],
                 "cv_bacc_mean": r["cv"]["balanced_accuracy"]["mean"],
                 "cv_bacc_std": r["cv"]["balanced_accuracy"]["std"],
@@ -394,7 +394,7 @@ def run_analysis(root: pathlib.Path) -> dict:
             for rank, r in enumerate(
                 sorted(
                     [x for x in benchmark["runs"] if x.get("gates", {}).get("G1_pass")],
-                    key=lambda x: x["holdout"]["balanced_accuracy"], reverse=True,
+                    key=lambda x: x["cv"]["balanced_accuracy"]["mean"], reverse=True,
                 )[:7], start=1
             )
         ],
@@ -515,13 +515,13 @@ def _write_markdown(a: dict, path: pathlib.Path) -> None:
     for g in a["gate_scorecard"]:
         res = result_emoji.get(g["result"], g["result"])
         if g["gate"] == "G-1":
-            nums = f"model {g['best_model_holdout_bacc']:.4f} vs baseline {g['shortcut_baseline']:.4f} → +{g['margin_pp']:.4f} pp"
+            nums = f"model {g['best_model_holdout_bacc']:.4f} vs baseline {g['shortcut_baseline']:.4f} → +{g['margin_pp']*100:.2f} pp"
         elif g["gate"] == "G-2":
             nums = f"D1 hold-out recall = {g['d1_grouped_holdout_recall']:.4f}" if g.get("d1_grouped_holdout_recall") else "—"
         elif g["gate"] == "G-3":
             nums = f"D1 FPR ref = {g['d1_grouped_holdout_fpr_reference']:.4f} (E1 required)"
         elif g["gate"] == "G-4":
-            nums = f"max gap = {g['max_gap_across_25_runs_pp']:.4f} pp across 25 runs"
+            nums = f"max gap = {g['max_gap_across_25_runs_pp']*100:.2f} pp across 25 runs"
         elif g["gate"] == "G-7":
             nums = f"ECE (uncal) = {g['best_rf_ece_uncalibrated']:.4f}, Brier = {g['best_rf_brier_uncalibrated']:.4f}"
         else:
@@ -539,11 +539,13 @@ def _write_markdown(a: dict, path: pathlib.Path) -> None:
         "",
         "## 2. Finalist Model Selection",
         "",
-        f"**CV criterion:** {a['finalist_selection']['cv_criterion']}",
+        f"**CV criterion (finalist ranking):** {a['finalist_selection']['cv_criterion']}",
         "",
-        f"**Hold-out criterion:** {a['finalist_selection']['holdout_criterion']}",
+        f"**Selection basis:** {a['finalist_selection']['finalist_selection_basis']}.",
         "",
-        f"**Hold-out evaluations:** {a['finalist_selection']['n_holdout_evaluations']} (one per combination, never re-used for tuning).",
+        f"**Hold-out (locked):** {a['finalist_selection']['holdout_criterion']}",
+        "",
+        f"**Hold-out evaluations:** {a['finalist_selection']['n_holdout_evaluations']} total (one per combination, never re-used for selection or tuning).",
         "",
         "| Rank | Selector | Classifier | CV bal-acc mean±std | HO bal-acc | G-1 margin | G-4 gap |",
         "|-----:|----------|-----------|--------------------:|----------:|-----------:|--------:|",
@@ -553,8 +555,8 @@ def _write_markdown(a: dict, path: pathlib.Path) -> None:
             f"| {f['rank']} | `{f['selector']}` | `{f['classifier']}` "
             f"| {f['cv_bacc_mean']:.4f} ± {f['cv_bacc_std']:.4f} "
             f"| {f['holdout_bacc']:.4f} "
-            f"| +{f['g1_margin']:.4f} pp "
-            f"| {f['g4_gap']:.4f} pp |"
+            f"| +{f['g1_margin']*100:.2f} pp "
+            f"| {f['g4_gap']*100:.2f} pp |"
         )
 
     lines += [
@@ -622,7 +624,7 @@ def _write_markdown(a: dict, path: pathlib.Path) -> None:
         f"| Hold-out recall | {a['hgb_reference_baseline']['holdout_recall']:.4f} |",
         f"| Hold-out FPR | {a['hgb_reference_baseline']['holdout_fpr']:.4f} |",
         f"| Shortcut baseline | {sc:.4f} |",
-        f"| G-1 margin vs shortcut | +{a['hgb_reference_baseline']['g1_margin_vs_shortcut']:.4f} pp |",
+        f"| G-1 margin vs shortcut | +{a['hgb_reference_baseline']['g1_margin_vs_shortcut']*100:.2f} pp |",
         "",
     ]
 

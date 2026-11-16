@@ -47,7 +47,7 @@ Generated: 2026-11-16T08:57:48.554333+00:00
 - **Selector:** `rf_importance`
 - **Classifier:** `rf`
 - **Hold-out balanced accuracy:** 0.9068
-- **G-1 margin:** +0.0643 pp (threshold ≥ +0.05)
+- **G-1 margin:** +6.43 pp (threshold ≥ +5.00 pp)
 
 Artifacts: `ml/models/best_model.joblib`, `ml/models/model.manifest.json`
 

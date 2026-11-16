@@ -520,7 +520,7 @@ def _write_markdown(report: dict, path: pathlib.Path) -> None:
             f"- **Selector:** `{best['selector']}`",
             f"- **Classifier:** `{best['classifier']}`",
             f"- **Hold-out balanced accuracy:** {best['holdout_balanced_acc']:.4f}",
-            f"- **G-1 margin:** {margin:+.4f} pp (threshold ≥ +0.05)",
+            f"- **G-1 margin:** {margin*100:+.2f} pp (threshold ≥ +5.00 pp)",
             "",
             "Artifacts: `ml/models/best_model.joblib`, `ml/models/model.manifest.json`",
         ]

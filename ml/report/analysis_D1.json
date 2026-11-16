@@ -204,7 +204,7 @@
   },
   "finalist_selection": {
     "cv_criterion": "Mean balanced accuracy across 5-fold StratifiedGroupKFold \u00d7 3 seeds (seeds 42, 43, 44) on training partition only.",
-    "finalist_selection_basis": "hold-out balanced_accuracy (after G-1 screening on hold-out margin)",
+    "finalist_selection_basis": "CV mean balanced_accuracy (5-fold StratifiedGroupKFold x 3 seeds) among G-1-passing combinations",
     "finalists": [
       {
         "classifier": "rf",
@@ -223,18 +223,8 @@
         "g1_margin": 0.063464,
         "g4_gap": 0.011096,
         "holdout_bacc": 0.905992,
-        "rank": 1,
+        "rank": 2,
         "selector": "rfe_rf"
-      },
-      {
-        "classifier": "rf",
-        "cv_bacc_mean": 0.902706,
-        "cv_bacc_std": 0.009788,
-        "g1_margin": 0.062335,
-        "g4_gap": 0.001184,
-        "holdout_bacc": 0.904863,
-        "rank": 1,
-        "selector": "mutual_info"
       },
       {
         "classifier": "rf",
@@ -243,8 +233,18 @@
         "g1_margin": 0.059272,
         "g4_gap": 0.011236,
         "holdout_bacc": 0.9018,
-        "rank": 1,
+        "rank": 3,
         "selector": "l1_lr"
+      },
+      {
+        "classifier": "rf",
+        "cv_bacc_mean": 0.902706,
+        "cv_bacc_std": 0.009788,
+        "g1_margin": 0.062335,
+        "g4_gap": 0.001184,
+        "holdout_bacc": 0.904863,
+        "rank": 4,
+        "selector": "mutual_info"
       },
       {
         "classifier": "knn",
@@ -253,18 +253,8 @@
         "g1_margin": 0.056365,
         "g4_gap": 0.005322,
         "holdout_bacc": 0.898893,
-        "rank": 1,
+        "rank": 5,
         "selector": "l1_lr"
-      },
-      {
-        "classifier": "knn",
-        "cv_bacc_mean": 0.889405,
-        "cv_bacc_std": 0.012903,
-        "g1_margin": 0.052692,
-        "g4_gap": 0.004609,
-        "holdout_bacc": 0.89522,
-        "rank": 1,
-        "selector": "rf_importance"
       },
       {
         "classifier": "knn",
@@ -273,11 +263,21 @@
         "g1_margin": 0.052406,
         "g4_gap": 0.005845,
         "holdout_bacc": 0.894934,
-        "rank": 1,
+        "rank": 6,
         "selector": "rfe_rf"
+      },
+      {
+        "classifier": "knn",
+        "cv_bacc_mean": 0.889405,
+        "cv_bacc_std": 0.012903,
+        "g1_margin": 0.052692,
+        "g4_gap": 0.004609,
+        "holdout_bacc": 0.89522,
+        "rank": 7,
+        "selector": "rf_importance"
       }
     ],
-    "holdout_criterion": "Hold-out evaluated ONCE per combination (25 evaluations total). No hyper-parameter tuning on hold-out. Best model selected as highest hold-out balanced_accuracy among G-1-passing combinations.",
+    "holdout_criterion": "Hold-out (D1 test.csv) evaluated ONCE per combination (25 evaluations total). No hyper-parameter tuning on hold-out. Hold-out is locked \u2014 never re-used for selection, tuning, or any optimization decision.",
     "n_holdout_evaluations": 25
   },
   "gate_scorecard": [
@@ -311,7 +311,7 @@
       "gate": "G-4",
       "max_gap_across_25_runs_pp": 0.022609,
       "name": "Generalization gap",
-      "note": "All 25 combinations pass. Largest gap = 0.0226 pp.",
+      "note": "All 25 combinations pass. Largest gap = 2.26 pp.",
       "result": "PASS",
       "rule": "random-split minus grouped-split balanced_acc <= 5 pp"
     },
@@ -346,7 +346,7 @@
       "rule": "recall on adversarial suite drops <= 10 pp vs clean"
     }
   ],
-  "generated_at_utc": "2026-11-16T17:53:52.025760+00:00",
+  "generated_at_utc": "2026-11-16T18:03:42.930295+00:00",
   "hgb_reference_baseline": {
     "g1_margin_vs_shortcut": 0.073418,
     "holdout_balanced_accuracy": 0.915946,
