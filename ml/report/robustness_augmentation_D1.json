@@ -1,0 +1,64 @@
+{
+  "generated_at_utc": "2026-11-16T18:57:36.278649+00:00",
+  "augmentation": {
+    "variants": [
+      "benign_path_token",
+      "brand_subdomain",
+      "hyphen_digit_host",
+      "long_path"
+    ],
+    "classes_augmented": [
+      "Benign",
+      "Malicious"
+    ],
+    "train_only": true,
+    "original_training_rows": 7781,
+    "augmented_training_rows": 38905,
+    "oof_seeds": [
+      {
+        "seed": 42,
+        "raw_oof_ece": 0.023338200783964015
+      },
+      {
+        "seed": 43,
+        "raw_oof_ece": 0.021507400728189033
+      },
+      {
+        "seed": 44,
+        "raw_oof_ece": 0.01963350475693253
+      }
+    ]
+  },
+  "metrics_at_T_0.70": {
+    "balanced_accuracy": 0.891624,
+    "accuracy": 0.915084,
+    "recall": 0.816233,
+    "precision": 0.928571,
+    "f1": 0.868786,
+    "f2": 0.836472,
+    "fpr": 0.032985,
+    "fnr": 0.183767,
+    "roc_auc": 0.965148,
+    "pr_auc": 0.937138,
+    "mcc": 0.810065,
+    "brier": 0.062249,
+    "ece": 0.016977,
+    "n_positive": 653,
+    "n_negative": 1243
+  },
+  "adversarial": {
+    "clean_recall": 0.816233,
+    "recall_drops": {
+      "benign_path_token": 0.289433,
+      "brand_subdomain": 0.02144,
+      "hyphen_digit_host": -0.026034,
+      "long_path": 0.323124
+    },
+    "worst_recall_drop": 0.323124,
+    "status": "FAIL"
+  },
+  "calibration": {
+    "method": "isotonic",
+    "selected_ece": 6.865233367155816e-17
+  }
+}

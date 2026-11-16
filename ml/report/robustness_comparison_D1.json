@@ -1,0 +1,47 @@
+{
+  "protocol": {
+    "dataset": "D1",
+    "block_threshold": 0.70,
+    "gate_definitions_changed": false,
+    "augmentation_train_only": true,
+    "augmentation_applied_to": [
+      "Benign",
+      "Malicious"
+    ]
+  },
+  "before": {
+    "source": "calibration_D1.json",
+    "gates": {
+      "G-1": "PASS",
+      "G-2": "FAIL",
+      "G-4": "PASS",
+      "G-7": "PASS",
+      "G-8": "FAIL"
+    },
+    "balanced_accuracy": 0.899165,
+    "recall_at_0.70": 0.836141,
+    "fpr_at_0.70": 0.037812,
+    "g8_worst_recall_drop": 0.116386
+  },
+  "after": {
+    "source": "robustness_augmentation_D1.json",
+    "gates": {
+      "G-1": "NOT_REEVALUATED",
+      "G-2": "FAIL",
+      "G-4": "NOT_REEVALUATED",
+      "G-7": "PASS",
+      "G-8": "FAIL"
+    },
+    "balanced_accuracy": 0.891624,
+    "recall_at_0.70": 0.816233,
+    "fpr_at_0.70": 0.032985,
+    "g8_worst_recall_drop": 0.323124,
+    "adversarial_recall_drops": {
+      "benign_path_token": 0.289433,
+      "brand_subdomain": 0.02144,
+      "hyphen_digit_host": -0.026034,
+      "long_path": 0.323124
+    }
+  },
+  "conclusion": "Symmetric train-fold-only augmentation reduced FPR and the brand-subdomain drop, but reduced clean recall and substantially worsened benign_path_token and long_path robustness. It is not an acceptable mitigation by the existing G-2/G-8 definitions."
+}

@@ -75,6 +75,7 @@ LABEL_NEGATIVE = "Benign"
 LABEL_MAP = {LABEL_NEGATIVE: 0, LABEL_POSITIVE: 1}
 SELECTOR_NAMES = ["rf_importance", "chi2", "mutual_info", "l1_lr", "rfe_rf"]
 CLASSIFIER_NAMES = ["knn", "rf", "svm", "lr", "gnb"]
+N_JOBS = 1
 
 
 # ---------------------------------------------------------------------------
@@ -189,7 +190,7 @@ class _RFImportanceSelector:
         self.seed = seed
         self._support: Optional[np.ndarray] = None
         self._rf = RandomForestClassifier(
-            n_estimators=100, class_weight="balanced", random_state=seed, n_jobs=-1
+            n_estimators=100, class_weight="balanced", random_state=seed, n_jobs=N_JOBS
         )
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "_RFImportanceSelector":
@@ -233,7 +234,7 @@ def _make_selector_step(name: str, k: int, seed: int):
         return ("selector", _L1Selector(k=k, seed=seed))
     if name == "rfe_rf":
         base = RandomForestClassifier(
-            n_estimators=100, class_weight="balanced", random_state=seed, n_jobs=-1
+            n_estimators=100, class_weight="balanced", random_state=seed, n_jobs=N_JOBS
         )
         return ("selector", RFE(base, n_features_to_select=k, step=10))
     raise ValueError(f"Unknown selector: {name!r}")
@@ -241,10 +242,10 @@ def _make_selector_step(name: str, k: int, seed: int):
 
 def _make_classifier_step(name: str, seed: int):
     if name == "knn":
-        return ("classifier", KNeighborsClassifier(n_neighbors=11, weights="distance", n_jobs=-1))
+        return ("classifier", KNeighborsClassifier(n_neighbors=11, weights="distance", n_jobs=N_JOBS))
     if name == "rf":
         return ("classifier", RandomForestClassifier(
-            n_estimators=200, class_weight="balanced", random_state=seed, n_jobs=-1
+            n_estimators=200, class_weight="balanced", random_state=seed, n_jobs=N_JOBS
         ))
     if name == "svm":
         return ("classifier", SVC(

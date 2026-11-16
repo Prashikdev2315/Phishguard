@@ -7,6 +7,7 @@ from ml.evaluate import (
     ece,
     fit_calibrator,
     generate_adversarial_urls,
+    _summary,
 )
 
 
@@ -46,3 +47,13 @@ def test_adversarial_generation_is_deterministic_and_preserves_sources():
         "hyphen_digit_host",
         "long_path",
     }
+
+
+def test_multi_seed_summary_is_deterministic_and_has_confidence_interval():
+    first = _summary([0.81, 0.82, 0.83])
+    second = _summary([0.81, 0.82, 0.83])
+
+    assert first == second
+    assert first["n_seeds"] == 3
+    assert first["mean"] == 0.82
+    assert first["ci95"][0] < first["mean"] < first["ci95"][1]

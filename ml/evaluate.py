@@ -252,6 +252,43 @@ def _oof_predictions(
     return y_train.copy(), probabilities
 
 
+def _oof_predictions_by_seed(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    groups_train: np.ndarray,
+    selector: str,
+    classifier: str,
+    k: int,
+) -> List[Tuple[int, np.ndarray, np.ndarray]]:
+    """Return one complete grouped OOF prediction vector per calibration seed."""
+    results = []
+    for seed in CALIBRATION_SEEDS:
+        fold_predictions = np.full(len(y_train), np.nan, dtype=float)
+        splitter = StratifiedGroupKFold(n_splits=N_SPLITS, shuffle=True, random_state=seed)
+        for fit_idx, validation_idx in splitter.split(X_train, y_train, groups_train):
+            pipeline = build_pipeline(selector, classifier, k, seed)
+            pipeline.fit(X_train[fit_idx], y_train[fit_idx])
+            fold_predictions[validation_idx] = _get_proba(pipeline, X_train[validation_idx])
+        if np.isnan(fold_predictions).any():
+            raise AssertionError(f"OOF calibration predictions are incomplete for seed {seed}")
+        results.append((seed, y_train.copy(), fold_predictions))
+    return results
+
+
+def _summary(values: Sequence[float]) -> dict:
+    """Summarize multi-seed values using a normal-approximation 95% CI."""
+    array = np.asarray(values, dtype=float)
+    mean = float(np.mean(array))
+    std = float(np.std(array, ddof=1)) if len(array) > 1 else 0.0
+    margin = 1.96 * std / np.sqrt(len(array)) if len(array) > 1 else 0.0
+    return {
+        "mean": round(mean, 6),
+        "std": round(std, 6),
+        "ci95": [round(max(0.0, mean - margin), 6), round(min(1.0, mean + margin), 6)],
+        "n_seeds": int(len(array)),
+    }
+
+
 def _load_optional_labels(path: pathlib.Path, expected_label: Optional[str] = None) -> Tuple[np.ndarray, np.ndarray]:
     frame = pd.read_csv(path, dtype=str, keep_default_na=False)
     if "URL" not in frame.columns:
@@ -307,16 +344,30 @@ def run_evaluation(root: pathlib.Path) -> dict:
         model.fit(X_train, y_train)
         raw_test = _get_proba(model, X_test)
 
-    oof_y, oof_raw = _oof_predictions(X_train, y_train, groups_train, selector, classifier, k)
+    per_seed_oof = _oof_predictions_by_seed(
+        X_train, y_train, groups_train, selector, classifier, k
+    )
+    oof_y = per_seed_oof[0][1]
+    oof_raw = np.mean([item[2] for item in per_seed_oof], axis=0)
     calibration = fit_calibrator(oof_raw, oof_y)
     calibrated_test = apply_calibrator(calibration, raw_test)
     test_metrics = _metric_at_threshold(y_test, calibrated_test, DEFAULT_BLOCK_THRESHOLD)
+    per_seed_results = []
+    for seed, seed_y, seed_raw in per_seed_oof:
+        seed_calibration = fit_calibrator(seed_raw, seed_y)
+        seed_test_probabilities = apply_calibrator(seed_calibration, raw_test)
+        seed_adversarial = evaluate_adversarial(
+            model, seed_calibration, test_frame["URL"].tolist(), y_test, DEFAULT_BLOCK_THRESHOLD
+        )
+        per_seed_results.append({
+            "seed": seed,
+            "g2_recall": _metric_at_threshold(
+                y_test, seed_test_probabilities, DEFAULT_BLOCK_THRESHOLD
+            )["recall"],
+            "g8_recall_drop": seed_adversarial.get("worst_recall_drop"),
+        })
     adversarial = evaluate_adversarial(
-        model,
-        calibration,
-        test_frame["URL"].tolist(),
-        y_test,
-        DEFAULT_BLOCK_THRESHOLD,
+        model, calibration, test_frame["URL"].tolist(), y_test, DEFAULT_BLOCK_THRESHOLD
     )
 
     warn_threshold = choose_warn_threshold(oof_y, apply_calibrator(calibration, oof_raw))
@@ -373,6 +424,11 @@ def run_evaluation(root: pathlib.Path) -> dict:
         },
         "test_metrics_calibrated": test_metrics,
         "adversarial": adversarial,
+        "multi_seed": {
+            "seeds": per_seed_results,
+            "G-2_recall": _summary([item["g2_recall"] for item in per_seed_results]),
+            "G-8_recall_drop": _summary([item["g8_recall_drop"] for item in per_seed_results]),
+        },
         "thresholds": thresholds,
         "threshold_source": threshold_source,
         "gates": gates,

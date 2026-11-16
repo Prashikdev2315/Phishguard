@@ -32,7 +32,7 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 - Best model (rf_importance selector × RandomForest classifier) achieved 90.68% hold-out balanced accuracy (CV: 0.9123 ± 0.0111). Saved to ml/models/best_model.joblib.
 - Total test suite: 164 unit, security, and pipeline tests all passing.
 - Chunk 6 calibration is implemented in `ml/evaluate.py`; the generated report is `ml/report/calibration_D1.md`.
-- Current Chunk 6 results: G-1, G-4, G-7, and D1 adversarial G-8 pass; G-2 fails on D1 recall; G-3, G-5, and G-6 remain unmeasurable until E1/E2, TypeScript, and browser evidence are available.
+- Current Chunk 6 results: G-1, G-4, and G-7 pass; G-2 and G-8 fail on the deterministic D1 evaluation; G-3, G-5, and G-6 remain unmeasurable until E1/E2, TypeScript, and browser evidence are available. The train-only symmetric augmentation experiment is documented in `ml/report/robustness_comparison_D1.md` and was rejected because path-padding drops worsened.
 
 ---
 

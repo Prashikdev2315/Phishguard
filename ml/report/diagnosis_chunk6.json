@@ -1,0 +1,169 @@
+{
+  "generated_at_utc": "2026-11-16T18:50:56.714422+00:00",
+  "model": {
+    "selector": "rf_importance",
+    "classifier": "rf",
+    "k": 20,
+    "threshold": 0.7
+  },
+  "brand_subdomain": {
+    "flipped_count": 91,
+    "unflipped_blocked_count": 455,
+    "flip_fraction_of_clean_blocked": 0.166667,
+    "permutation_importance": [
+      {
+        "group": "brand_subdomain_flipped",
+        "n": 91,
+        "features": [
+          {
+            "feature": "tld_length",
+            "mean_importance": 0.00666181,
+            "std": 0.00634411
+          },
+          {
+            "feature": "ampersand_count",
+            "mean_importance": 0.0,
+            "std": 0.0
+          },
+          {
+            "feature": "uppercase_ratio",
+            "mean_importance": 0.0,
+            "std": 0.0
+          },
+          {
+            "feature": "path_depth",
+            "mean_importance": 0.0,
+            "std": 0.0
+          },
+          {
+            "feature": "action_word_count",
+            "mean_importance": 0.0,
+            "std": 0.0
+          },
+          {
+            "feature": "sensitive_word_count",
+            "mean_importance": 0.0,
+            "std": 0.0
+          },
+          {
+            "feature": "tilde_count",
+            "mean_importance": 0.0,
+            "std": 0.0
+          },
+          {
+            "feature": "equals_count",
+            "mean_importance": 0.0,
+            "std": 0.0
+          },
+          {
+            "feature": "percent_encoded_count",
+            "mean_importance": 0.0,
+            "std": 0.0
+          },
+          {
+            "feature": "subdomain_count",
+            "mean_importance": 0.0,
+            "std": 0.0
+          }
+        ]
+      },
+      {
+        "group": "brand_subdomain_unflipped",
+        "n": 455,
+        "features": [
+          {
+            "feature": "digit_count",
+            "mean_importance": 0.02721978,
+            "std": 0.00126122
+          },
+          {
+            "feature": "max_digit_run",
+            "mean_importance": 0.02263321,
+            "std": 0.00153207
+          },
+          {
+            "feature": "letter_ratio",
+            "mean_importance": 0.01536423,
+            "std": 0.00084509
+          },
+          {
+            "feature": "url_length",
+            "mean_importance": 0.01405385,
+            "std": 0.00060464
+          },
+          {
+            "feature": "special_char_ratio",
+            "mean_importance": 0.0137309,
+            "std": 0.00087701
+          },
+          {
+            "feature": "path_length",
+            "mean_importance": 0.01336904,
+            "std": 0.00116923
+          },
+          {
+            "feature": "host_bigram_distinct_count",
+            "mean_importance": 0.00953384,
+            "std": 0.00043589
+          },
+          {
+            "feature": "distinct_char_ratio",
+            "mean_importance": 0.00821319,
+            "std": 0.00041883
+          },
+          {
+            "feature": "url_entropy",
+            "mean_importance": 0.00761868,
+            "std": 0.000649
+          },
+          {
+            "feature": "path_entropy",
+            "mean_importance": 0.00742322,
+            "std": 0.00053834
+          }
+        ]
+      }
+    ]
+  },
+  "path_ablation": {
+    "dropped_features": [
+      "path_length",
+      "path_entropy"
+    ],
+    "metrics": {
+      "balanced_accuracy": 0.894052,
+      "accuracy": 0.913502,
+      "recall": 0.831547,
+      "precision": 0.909548,
+      "f1": 0.8688,
+      "f2": 0.846058,
+      "fpr": 0.043443,
+      "fnr": 0.168453,
+      "roc_auc": 0.963884,
+      "pr_auc": 0.938987,
+      "mcc": 0.806276,
+      "brier": 0.065672,
+      "ece": 0.015711,
+      "n_positive": 653,
+      "n_negative": 1243
+    },
+    "adversarial_recall_drops": {
+      "benign_path_token": -0.168453,
+      "brand_subdomain": 0.127106,
+      "hyphen_digit_host": -0.027565,
+      "long_path": -0.168453
+    }
+  },
+  "empty_path_label_correlation": {
+    "Benign": {
+      "rows": 6170,
+      "empty_path_rows": 6091,
+      "empty_path_fraction": 0.987196
+    },
+    "Malicious": {
+      "rows": 3507,
+      "empty_path_rows": 1187,
+      "empty_path_fraction": 0.338466
+    }
+  }
+}

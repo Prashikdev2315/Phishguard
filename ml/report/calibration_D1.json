@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-16T18:30:40.720008+00:00",
+  "generated_at_utc": "2026-11-16T18:48:31.537012+00:00",
   "schema": "fs1",
   "model": {
     "selector": "rf_importance",
@@ -8,55 +8,92 @@
   },
   "calibration": {
     "method": "isotonic",
-    "raw_ece": 0.014164533647809037,
-    "platt_ece": 0.02167022308560646,
-    "isotonic_ece": 5.836482819983553e-17,
-    "selected_ece": 5.836482819983553e-17,
+    "raw_ece": 0.01720416012166558,
+    "platt_ece": 0.022337335764558566,
+    "isotonic_ece": 4.37254653510319e-17,
+    "selected_ece": 4.37254653510319e-17,
     "sample_count": 7781
   },
   "test_metrics_calibrated": {
-    "balanced_accuracy": 0.888886,
-    "accuracy": 0.912447,
-    "recall": 0.81317,
-    "precision": 0.923478,
-    "f1": 0.864821,
-    "f2": 0.833072,
-    "fpr": 0.035398,
-    "fnr": 0.18683,
-    "roc_auc": 0.967817,
-    "pr_auc": 0.940952,
-    "mcc": 0.804005,
-    "brier": 0.060612,
-    "ece": 0.014566,
+    "balanced_accuracy": 0.899165,
+    "accuracy": 0.918776,
+    "recall": 0.836141,
+    "precision": 0.920742,
+    "f1": 0.876404,
+    "f2": 0.851794,
+    "fpr": 0.037812,
+    "fnr": 0.163859,
+    "roc_auc": 0.967647,
+    "pr_auc": 0.941991,
+    "mcc": 0.818228,
+    "brier": 0.060386,
+    "ece": 0.012898,
     "n_positive": 653,
     "n_negative": 1243
   },
   "adversarial": {
-    "status": "PASS",
+    "status": "FAIL",
     "threshold": 0.7,
-    "clean_recall": 0.81317,
-    "worst_recall_drop": 0.099541,
+    "clean_recall": 0.836141,
+    "worst_recall_drop": 0.116386,
     "variants": {
       "benign_path_token": {
         "count": 653,
         "recall": 1.0,
-        "drop": -0.18683
+        "drop": -0.163859
       },
       "brand_subdomain": {
         "count": 653,
-        "recall": 0.713629,
-        "drop": 0.099541
+        "recall": 0.719755,
+        "drop": 0.116386
       },
       "hyphen_digit_host": {
         "count": 653,
-        "recall": 0.840735,
-        "drop": -0.027565
+        "recall": 0.854518,
+        "drop": -0.018377
       },
       "long_path": {
         "count": 653,
         "recall": 0.981623,
-        "drop": -0.168453
+        "drop": -0.145482
       }
+    }
+  },
+  "multi_seed": {
+    "seeds": [
+      {
+        "seed": 42,
+        "g2_recall": 0.811639,
+        "g8_recall_drop": 0.098009
+      },
+      {
+        "seed": 43,
+        "g2_recall": 0.811639,
+        "g8_recall_drop": 0.098009
+      },
+      {
+        "seed": 44,
+        "g2_recall": 0.822358,
+        "g8_recall_drop": 0.107198
+      }
+    ],
+    "G-2_recall": {
+      "mean": 0.815212,
+      "std": 0.006189,
+      "ci95": [
+        0.808209,
+        0.822215
+      ],
+      "n_seeds": 3
+    },
+    "G-8_recall_drop": {
+      "mean": 0.101072,
+      "std": 0.005305,
+      "ci95": [
+        0.095069,
+        0.107075
+      ],
+      "n_seeds": 3
     }
   },
   "thresholds": {
@@ -84,7 +121,7 @@
       "gate": "G-2",
       "result": "FAIL",
       "rule": "recall >= 90% on D1 grouped hold-out and >= 80% on E2",
-      "d1_recall": 0.81317,
+      "d1_recall": 0.836141,
       "e2": "NOT_MEASURABLE"
     },
     {
@@ -117,9 +154,9 @@
     },
     {
       "gate": "G-8",
-      "result": "PASS",
+      "result": "FAIL",
       "rule": "Adversarial recall drop <= 10 pp",
-      "worst_recall_drop": 0.099541
+      "worst_recall_drop": 0.116386
     }
   ],
   "evidence": {
