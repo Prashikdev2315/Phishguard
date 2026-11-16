@@ -18,7 +18,7 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 | 4 | **Normalization & Features** | FS1 feature extraction, 50-feature specification, implementation and unit tests | ✅ Complete |
 | 5 | **Benchmark** | 25-run benchmark (5 selectors × 5 classifiers, 3 seeds × 5 folds), leakage guards, model selection, Gate G-1 & G-4 evaluation | ✅ Complete |
 | 6 | **Calibration & Gates** | Threshold calibration and Gates G-1 to G-8, including adversarial evaluation | ✅ Implemented; external evidence pending |
-| 7 | **Export** | Binary model packager (`model.bin`, `PGM1`), manifest and joblib oracle | 📋 Queued |
+| 7 | **Export** | Binary model packager (`model.bin`, `PGM1`), manifest and joblib oracle | ✅ Complete |
 | 8 | **TypeScript Port** | On-device TypeScript runtime and Python/TypeScript parity tests (G-5) | 📋 Queued |
 | 9 | **Extension Core** | Service-worker navigation pipeline, cache, allowlist and override flow | 📋 Queued |
 | 10 | **User Interface** | Popup, options page, warning interstitial, about and history pages | 📋 Queued |
@@ -33,6 +33,7 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 - Total test suite: 164 unit, security, and pipeline tests all passing.
 - Chunk 6 calibration is implemented in `ml/evaluate.py`; the generated report is `ml/report/calibration_D1.md`.
 - Current Chunk 6 results: G-1, G-4, and G-7 pass; G-2 and G-8 fail on the deterministic D1 evaluation; G-3, G-5, and G-6 remain unmeasurable until E1/E2, TypeScript, and browser evidence are available. The train-only symmetric augmentation experiment is documented in `ml/report/robustness_comparison_D1.md` and was rejected because path-padding drops worsened.
+- Chunk 7 export is complete: `extension/public/model.bin` uses the frozen PGM1 format, is 1,590,495 bytes, and matches the SHA-256 recorded in `ml/models/model.manifest.json`; Python binary-tree parity tests pass.
 
 ---
 
