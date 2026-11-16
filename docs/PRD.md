@@ -260,7 +260,7 @@ KNN has no native attributions, so reasons are deterministic rules over the feat
 ### 7.8 Production model selection and export
 
 - **Selection rule.** Among candidates that pass G-1 to G-4 on the grouped folds, pick the highest recall at the block-FPR target. Ties go to the smaller, faster, simpler model. RFE + KNN is preferred (as in the original brief) when it is within 1 pp of the best.
-- **Export (FR-21).** `model.bin` holds a header (magic `PGM1`, schema `fs1`, model version, feature count, sample count, k), scaler mean and scale, selected feature indices, the float32 training matrix and uint8 labels (KNN) or coefficient and tree arrays (LR and RF adapters), and the Platt parameters. `model.manifest.json` holds the SHA-256, metric summary, gate results, thresholds, and data hashes. Target size is under 2 MB. LR and KNN adapters are P0; the RF adapter is P1. The joblib model stays as the Python oracle.
+- **Export (FR-21).** The shipped RF finalist is exported by `python -m ml.export` to `extension/public/model.bin`. The file uses the frozen PGM1 wire format: a canonical JSON header followed by a level-9 zlib payload containing the 50-value MinMax scaler arrays, 20 selected feature indices, and all 200 packed forest trees. Each tree stores node count, child indices, split features, thresholds, and float32 malicious-leaf probabilities. `ml/models/model.manifest.json` records the binary SHA-256, byte size, format, model version, calibration metadata, metric summary, gate results, thresholds, and data hashes. The artifact is strictly under 2 MiB; the joblib model stays as the Python oracle.
 - **Versioning.** `pg-model-1.0.0`. Model updates ship only with extension releases.
 
 ## 8. Extension specification

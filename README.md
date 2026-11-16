@@ -30,7 +30,7 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 - Cleaned D1 dataset generated: 9,677 rows (6,170 Benign, 3,507 Malicious) across 80/20 domain-grouped splits (7,781 train / 1,896 test) with 0 domain overlap.
 - Chunk 5 25-run benchmark completed: shortcut baseline is 84.25% balanced accuracy; Gate G-1 passed (+6.43 pp margin) and Gate G-4 passed (<1.2 pp gap).
 - Best model (rf_importance selector × RandomForest classifier) achieved 90.68% hold-out balanced accuracy (CV: 0.9123 ± 0.0111). Saved to ml/models/best_model.joblib.
-- Total test suite: 164 unit, security, and pipeline tests all passing.
+- Total test suite: 186 unit, security, pipeline, robustness, and export tests all passing.
 - Chunk 6 calibration is implemented in `ml/evaluate.py`; the generated report is `ml/report/calibration_D1.md`.
 - Current Chunk 6 results: G-1, G-4, and G-7 pass; G-2 and G-8 fail on the deterministic D1 evaluation; G-3, G-5, and G-6 remain unmeasurable until E1/E2, TypeScript, and browser evidence are available. The train-only symmetric augmentation experiment is documented in `ml/report/robustness_comparison_D1.md` and was rejected because path-padding drops worsened.
 - Chunk 7 export is complete: `extension/public/model.bin` uses the frozen PGM1 format, is 1,590,495 bytes, and matches the SHA-256 recorded in `ml/models/model.manifest.json`; Python binary-tree parity tests pass.
@@ -58,6 +58,8 @@ PhishGuard/
 │
 ├── extension/
 │   ├── manifest.json
+│   └── public/
+│       └── model.bin
 │   └── src/
 │       ├── sw/
 │       └── pages/
@@ -76,6 +78,7 @@ PhishGuard/
 │   ├── build_external.py
 │   ├── collect_e1.py
 │   ├── evaluate_e1.py
+│   ├── export.py
 │   ├── features.py
 │   ├── feature_spec.json
 │   └── report/
