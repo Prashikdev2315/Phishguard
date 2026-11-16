@@ -251,10 +251,10 @@ def write_json(path: pathlib.Path, payload: dict) -> None:
 
 
 def load_e1(path: pathlib.Path) -> pd.DataFrame:
-    """Load E1_candidates.csv (columns: URL, domain, rank, collection_date).
+    """Load E1_candidates.csv (columns: URL, domain, rank, collection_date, source).
 
     All rows are labeled Benign. Only URL is passed through normalization;
-    domain/rank/collection_date are kept as metadata but not used as features.
+    domain/rank/collection_date/source are kept as metadata but not used as features.
     """
     required = ("URL", "domain", "rank", "collection_date")
     df = pd.read_csv(path, dtype=str, keep_default_na=False)
@@ -264,7 +264,11 @@ def load_e1(path: pathlib.Path) -> pd.DataFrame:
     df["URL"] = df["URL"].str.strip()
     df["type"] = "Benign"
     df = df[df["URL"].ne("")]
-    return df[["URL", "type"]].copy()
+    cols = ["URL", "type"]
+    for c in ("domain", "rank", "collection_date", "source"):
+        if c in df.columns:
+            cols.append(c)
+    return df[cols].copy()
 
 
 def integrate_e1(
@@ -415,6 +419,8 @@ def build(source: pathlib.Path, root: pathlib.Path, seed: int = SEED, e1_path: O
     review[["URL", "type", "norm_url", "registrable_domain"]].to_csv(review_path, index=False)
 
     grouped_train, grouped_test = grouped_holdout(capped, seed=seed)
+    d1_test_domains = sorted(set(grouped_test["registrable_domain"].dropna().unique()))
+    d1_test_domains_hash = sha256_text("\n".join(d1_test_domains))
 
     # E1 integration (optional)
     e1_provenance = None
@@ -430,6 +436,14 @@ def build(source: pathlib.Path, root: pathlib.Path, seed: int = SEED, e1_path: O
             raise AssertionError(
                 f"E1 training domains overlap D1 test domains: {len(leaking)} domains."
             )
+        # Assertion: set of D1 test-split registrable domains is identical before and after integrating E1
+        test_domains_after = sorted(set(grouped_test["registrable_domain"].dropna().unique()))
+        assert test_domains_after == d1_test_domains, (
+            "D1 test-split registrable domains set changed after integrating E1!"
+        )
+        assert sha256_text("\n".join(test_domains_after)) == d1_test_domains_hash, (
+            "D1 test-split domain hash mismatch after integrating E1!"
+        )
         # Append E1 training rows (Benign) to the training partition
         grouped_train = pd.concat([grouped_train, e1_training], ignore_index=True)
         grouped_train = grouped_train.sort_values(
@@ -480,6 +494,8 @@ def build(source: pathlib.Path, root: pathlib.Path, seed: int = SEED, e1_path: O
         "normalization_errors": int(len(normalization_errors)),
         "normalized_cross_label_conflicts": 0,
         "domain_cap_violations": int(cap_violations),
+        "d1_test_domains_hash": d1_test_domains_hash,
+        "d1_test_domains_count": len(d1_test_domains),
         "e1_integration": e1_provenance,
         "output_sha256": {
             "D1_cleaned.csv": sha256_file(cleaned_path),
@@ -500,6 +516,8 @@ def build(source: pathlib.Path, root: pathlib.Path, seed: int = SEED, e1_path: O
             "domain_overlap_count": len(grouped_overlap),
             "train_domains": int(grouped_train["registrable_domain"].nunique()),
             "test_domains": int(grouped_test["registrable_domain"].nunique()),
+            "d1_test_domains_hash": d1_test_domains_hash,
+            "d1_test_domains_count": len(d1_test_domains),
         },
         "random_stratified_comparison": {
             "train_rows": int(len(random_train)),
@@ -526,6 +544,7 @@ def build(source: pathlib.Path, root: pathlib.Path, seed: int = SEED, e1_path: O
         f"- Rows without registrable domain: {len(no_domain):,} (quarantined for review)",
         f"- Grouped train/test: {len(grouped_train):,}/{len(grouped_test):,}",
         f"- Grouped domain overlap: {len(grouped_overlap)}",
+        f"- D1 test-split registrable domains hash: `{d1_test_domains_hash}` ({len(d1_test_domains)} domains)",
         f"- E1 integration: {'enabled (' + str(e1_provenance['e1_training_rows']) + ' training rows, ' + str(e1_provenance['e1_holdout_rows']) + ' holdout rows)' if e1_provenance else 'disabled (--e1 not supplied)'}",
         "",
         "## Class counts after cleaning",

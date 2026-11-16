@@ -9,6 +9,8 @@
 - Rows without registrable domain: 123 (quarantined for review)
 - Grouped train/test: 7,781/1,896
 - Grouped domain overlap: 0
+- D1 test-split registrable domains hash: `cbf6eadaadbda9093d97a623f695f8ee4f493927bdee39f131e23b091039328e` (1122 domains)
+- E1 integration: disabled (--e1 not supplied)
 
 ## Class counts after cleaning
 

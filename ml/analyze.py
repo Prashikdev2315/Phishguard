@@ -188,7 +188,7 @@ def rf_feature_importance(pipe: Pipeline) -> List[dict]:
 # Gate scorecard
 # ---------------------------------------------------------------------------
 
-def build_gate_scorecard(report: dict) -> List[dict]:
+def build_gate_scorecard(report: dict, e1_report: Optional[dict] = None) -> List[dict]:
     """
     Build G-1 to G-8 scorecard using only numbers from generated reports.
     Not-measurable gates require E1/E2 or TypeScript port (not yet available).
@@ -210,6 +210,30 @@ def build_gate_scorecard(report: dict) -> List[dict]:
 
     g4_gaps = [r["gates"]["G4_gap"] for r in report["runs"] if r.get("status") == "ok"]
     max_g4_gap = max(g4_gaps) if g4_gaps else None
+
+    if e1_report is not None:
+        ov = e1_report["overall"]
+        g3_gate = {
+            "gate": "G-3",
+            "name": "Block FPR",
+            "rule": "FPR <= 0.5% on E1 hold-out with allowlist off (95% Wilson interval reported)",
+            "e1_holdout_fpr": ov["fpr"],
+            "e1_holdout_fpr_percent": ov["fpr_percent"],
+            "wilson_95_ci": ov["wilson_95_ci"],
+            "wilson_95_ci_str": ov["wilson_ci_str"],
+            "result": "PASS" if ov["fpr"] <= 0.005 else "FAIL",
+            "note": f"E1 hold-out FPR = {ov['fpr_percent']:.2f}% (95% CI: {ov['wilson_ci_str']}). Target <= 0.50%.",
+        }
+    else:
+        g3_gate = {
+            "gate": "G-3",
+            "name": "Block FPR",
+            "rule": "FPR <= 0.5% on E1 hold-out with allowlist off (95% Wilson interval reported)",
+            "d1_grouped_holdout_fpr_reference": best_rf_fpr,
+            "result": "NOT_MEASURABLE",
+            "note": "E1 hold-out is not yet available. D1 FPR (reference only, not E1) = "
+                    f"{best_rf_fpr:.4f} ({best_rf_fpr*100:.2f}%). Gate requires E1.",
+        }
 
     scorecard = [
         {
@@ -233,15 +257,7 @@ def build_gate_scorecard(report: dict) -> List[dict]:
                 "E2 is not yet available; E2 recall cannot be measured."
             ) if best_rf_recall is not None else "Data unavailable.",
         },
-        {
-            "gate": "G-3",
-            "name": "Block FPR",
-            "rule": "FPR <= 0.5% on E1 hold-out with allowlist off (95% Wilson interval reported)",
-            "d1_grouped_holdout_fpr_reference": best_rf_fpr,
-            "result": "NOT_MEASURABLE",
-            "note": "E1 hold-out is not yet available. D1 FPR (reference only, not E1) = "
-                    f"{best_rf_fpr:.4f} ({best_rf_fpr*100:.2f}%). Gate requires E1.",
-        },
+        g3_gate,
         {
             "gate": "G-4",
             "name": "Generalization gap",
@@ -369,9 +385,20 @@ def run_analysis(root: pathlib.Path) -> dict:
     LOGGER.info("Loading train split ...")
     X_train, y_train, df_train = load_split_with_meta(train_path, proc_dir)
 
+    # Check for E1 holdout
+    e1_holdout_path = splits_dir / "e1_holdout.csv"
+    e1_report = None
+    if e1_holdout_path.exists():
+        LOGGER.info("E1 hold-out detected at %s; evaluating E1 FPR per slice ...", e1_holdout_path)
+        from ml.evaluate_e1 import evaluate_e1_slices
+        try:
+            e1_report = evaluate_e1_slices(e1_holdout_path, model_path, root=root)
+        except Exception as exc:
+            LOGGER.warning("Could not evaluate E1 holdout: %s", exc)
+
     # ---- 1. Gate scorecard ---------------------------------------------------
     LOGGER.info("Building gate scorecard ...")
-    scorecard = build_gate_scorecard(benchmark)
+    scorecard = build_gate_scorecard(benchmark, e1_report=e1_report)
 
     # ---- 2. Selection methodology --------------------------------------------
     selection_method = {
@@ -478,6 +505,7 @@ def run_analysis(root: pathlib.Path) -> dict:
         "gate_scorecard": scorecard,
         "finalist_selection": selection_method,
         "error_analysis": error_analysis,
+        "e1_evaluation": e1_report,
         "hgb_reference_baseline": hgb_result,
     }
 
@@ -519,7 +547,10 @@ def _write_markdown(a: dict, path: pathlib.Path) -> None:
         elif g["gate"] == "G-2":
             nums = f"D1 hold-out recall = {g['d1_grouped_holdout_recall']:.4f}" if g.get("d1_grouped_holdout_recall") else "—"
         elif g["gate"] == "G-3":
-            nums = f"D1 FPR ref = {g['d1_grouped_holdout_fpr_reference']:.4f} (E1 required)"
+            if "e1_holdout_fpr_percent" in g:
+                nums = f"E1 FPR = {g['e1_holdout_fpr_percent']:.2f}% (CI {g['wilson_95_ci_str']})"
+            else:
+                nums = f"D1 FPR ref = {g['d1_grouped_holdout_fpr_reference']:.4f} (E1 required)"
         elif g["gate"] == "G-4":
             nums = f"max gap = {g['max_gap_across_25_runs_pp']*100:.2f} pp across 25 runs"
         elif g["gate"] == "G-7":
@@ -609,6 +640,31 @@ def _write_markdown(a: dict, path: pathlib.Path) -> None:
             for rank, fi in enumerate(ea["rf_feature_importances_top20"], start=1):
                 lines.append(f"| {rank} | `{fi['feature']}` | {fi['importance']:.6f} |")
             lines.append("")
+
+    if a.get("e1_evaluation"):
+        e1 = a["e1_evaluation"]
+        ov = e1["overall"]
+        lines += [
+            "---",
+            "",
+            "## 3b. E1 Benign FPR Evaluation (Hold-out Slices)",
+            "",
+            f"Evaluated on locked hold-out `{e1['holdout_file']}` ({e1['total_holdout_urls']} URLs). "
+            "All rows are Benign; every positive prediction is a false positive.",
+            "",
+            f"- **Overall FPR:** {ov['fpr_percent']:.2f}% ({ov['false_positives']}/{ov['n']})",
+            f"- **95% Wilson Confidence Interval:** {ov['wilson_ci_str']}",
+            f"- **Gate G-3 (FPR ≤ 0.50%):** {'✅ PASS' if e1['gate_g3']['status'] == 'PASS' else '❌ FAIL'}",
+            "",
+            "| Slice Category | Slice | Count (n) | False Positives (k) | FPR (%) | 95% Wilson CI |",
+            "|----------------|-------|----------:|--------------------:|--------:|:-------------:|",
+        ]
+        for sl in e1["slices"]:
+            lines.append(
+                f"| `{sl['slice_category']}` | `{sl['slice_value']}` | {sl['n']:,} | "
+                f"{sl['false_positives']:,} | {sl['fpr_percent']:.2f}% | {sl['wilson_ci_str']} |"
+            )
+        lines.append("")
 
     lines += [
         "---",

@@ -2,6 +2,8 @@
   "cv_manifest": "data/splits/cv_folds.json",
   "group_column": "registrable_domain",
   "grouped": {
+    "d1_test_domains_count": 1122,
+    "d1_test_domains_hash": "cbf6eadaadbda9093d97a623f695f8ee4f493927bdee39f131e23b091039328e",
     "domain_overlap_count": 0,
     "test_class_counts": {
       "Benign": 1243,
