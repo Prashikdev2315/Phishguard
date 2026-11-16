@@ -1,0 +1,131 @@
+{
+  "generated_at_utc": "2026-11-16T18:30:40.720008+00:00",
+  "schema": "fs1",
+  "model": {
+    "selector": "rf_importance",
+    "classifier": "rf",
+    "k": 20
+  },
+  "calibration": {
+    "method": "isotonic",
+    "raw_ece": 0.014164533647809037,
+    "platt_ece": 0.02167022308560646,
+    "isotonic_ece": 5.836482819983553e-17,
+    "selected_ece": 5.836482819983553e-17,
+    "sample_count": 7781
+  },
+  "test_metrics_calibrated": {
+    "balanced_accuracy": 0.888886,
+    "accuracy": 0.912447,
+    "recall": 0.81317,
+    "precision": 0.923478,
+    "f1": 0.864821,
+    "f2": 0.833072,
+    "fpr": 0.035398,
+    "fnr": 0.18683,
+    "roc_auc": 0.967817,
+    "pr_auc": 0.940952,
+    "mcc": 0.804005,
+    "brier": 0.060612,
+    "ece": 0.014566,
+    "n_positive": 653,
+    "n_negative": 1243
+  },
+  "adversarial": {
+    "status": "PASS",
+    "threshold": 0.7,
+    "clean_recall": 0.81317,
+    "worst_recall_drop": 0.099541,
+    "variants": {
+      "benign_path_token": {
+        "count": 653,
+        "recall": 1.0,
+        "drop": -0.18683
+      },
+      "brand_subdomain": {
+        "count": 653,
+        "recall": 0.713629,
+        "drop": 0.099541
+      },
+      "hyphen_digit_host": {
+        "count": 653,
+        "recall": 0.840735,
+        "drop": -0.027565
+      },
+      "long_path": {
+        "count": 653,
+        "recall": 0.981623,
+        "drop": -0.168453
+      }
+    }
+  },
+  "thresholds": {
+    "_comment": "Default band thresholds. Set by calibration in Chunk 6 (\u00a77.6). Do not edit manually.",
+    "schema": "fs1",
+    "model_version": "pg-model-unset",
+    "T_safe_max": 34,
+    "T_suspicious_min": 35,
+    "T_suspicious_max": 69,
+    "T_high_risk_min": 70,
+    "T_block": 70,
+    "T_warn": 35,
+    "set_by": "default",
+    "set_at": "chunk-1-scaffold"
+  },
+  "threshold_source": "default",
+  "gates": [
+    {
+      "gate": "G-1",
+      "result": "PASS",
+      "rule": "grouped-test balanced accuracy exceeds shortcut baseline by at least 5 pp",
+      "margin": 0.064308
+    },
+    {
+      "gate": "G-2",
+      "result": "FAIL",
+      "rule": "recall >= 90% on D1 grouped hold-out and >= 80% on E2",
+      "d1_recall": 0.81317,
+      "e2": "NOT_MEASURABLE"
+    },
+    {
+      "gate": "G-3",
+      "result": "NOT_MEASURABLE",
+      "rule": "FPR <= 0.5% on E1 hold-out with 95% Wilson interval",
+      "e1_available": false
+    },
+    {
+      "gate": "G-4",
+      "result": "PASS",
+      "rule": "random-split minus grouped-split balanced accuracy <= 5 pp"
+    },
+    {
+      "gate": "G-5",
+      "result": "NOT_MEASURABLE",
+      "rule": "Python/TypeScript risk differs by at most 1 point"
+    },
+    {
+      "gate": "G-6",
+      "result": "NOT_MEASURABLE",
+      "rule": "Inference p95 < 15 ms and end-to-end p95 < 30 ms"
+    },
+    {
+      "gate": "G-7",
+      "result": "PASS",
+      "rule": "ECE <= 0.05 with Brier score reported",
+      "method": "isotonic",
+      "ece": 0.0
+    },
+    {
+      "gate": "G-8",
+      "result": "PASS",
+      "rule": "Adversarial recall drop <= 10 pp",
+      "worst_recall_drop": 0.099541
+    }
+  ],
+  "evidence": {
+    "e1_available": false,
+    "e2_available": false,
+    "typescript_parity_available": false,
+    "browser_performance_available": false
+  }
+}

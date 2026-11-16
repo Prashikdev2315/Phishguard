@@ -17,7 +17,7 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 | 3 | **Data Build** | D1 cleaning, domain-based splits (80/20 grouped), cross-validation folds, E1 pipeline | ✅ Complete |
 | 4 | **Normalization & Features** | FS1 feature extraction, 50-feature specification, implementation and unit tests | ✅ Complete |
 | 5 | **Benchmark** | 25-run benchmark (5 selectors × 5 classifiers, 3 seeds × 5 folds), leakage guards, model selection, Gate G-1 & G-4 evaluation | ✅ Complete |
-| 6 | **Calibration & Gates** | Threshold calibration and Gates G-1 to G-8, including adversarial evaluation | 📋 Next |
+| 6 | **Calibration & Gates** | Threshold calibration and Gates G-1 to G-8, including adversarial evaluation | ✅ Implemented; external evidence pending |
 | 7 | **Export** | Binary model packager (`model.bin`, `PGM1`), manifest and joblib oracle | 📋 Queued |
 | 8 | **TypeScript Port** | On-device TypeScript runtime and Python/TypeScript parity tests (G-5) | 📋 Queued |
 | 9 | **Extension Core** | Service-worker navigation pipeline, cache, allowlist and override flow | 📋 Queued |
@@ -31,7 +31,8 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 - Chunk 5 25-run benchmark completed: shortcut baseline is 84.25% balanced accuracy; Gate G-1 passed (+6.43 pp margin) and Gate G-4 passed (<1.2 pp gap).
 - Best model (rf_importance selector × RandomForest classifier) achieved 90.68% hold-out balanced accuracy (CV: 0.9123 ± 0.0111). Saved to ml/models/best_model.joblib.
 - Total test suite: 164 unit, security, and pipeline tests all passing.
-- Ready to proceed to Chunk 6 (Calibration & Gates).
+- Chunk 6 calibration is implemented in `ml/evaluate.py`; the generated report is `ml/report/calibration_D1.md`.
+- Current Chunk 6 results: G-1, G-4, G-7, and D1 adversarial G-8 pass; G-2 fails on D1 recall; G-3, G-5, and G-6 remain unmeasurable until E1/E2, TypeScript, and browser evidence are available.
 
 ---
 
