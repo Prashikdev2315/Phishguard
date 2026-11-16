@@ -1,0 +1,360 @@
+{
+  "error_analysis": {
+    "KNN_l1_lr": {
+      "classifier": "knn",
+      "fn_bare_homepage_count": 97,
+      "fn_bare_homepage_share": 0.97,
+      "n_false_negatives": 100,
+      "overall_holdout_fpr": 0.049075,
+      "overall_holdout_recall": 0.846861,
+      "rf_feature_importances_top20": [],
+      "selector": "l1_lr",
+      "slices": [
+        {
+          "fpr": 1.0,
+          "n": 452,
+          "n_negative": 21,
+          "n_positive": 431,
+          "recall": 0.993039,
+          "slice": "has_path=True"
+        },
+        {
+          "fpr": 0.032733,
+          "n": 1444,
+          "n_negative": 1222,
+          "n_positive": 222,
+          "recall": 0.563063,
+          "slice": "has_path=False"
+        },
+        {
+          "fpr": 0.0,
+          "n": 4,
+          "n_negative": 1,
+          "n_positive": 3,
+          "recall": 1.0,
+          "slice": "on_hosting_platform=True"
+        },
+        {
+          "fpr": 0.049114,
+          "n": 1892,
+          "n_negative": 1242,
+          "n_positive": 650,
+          "recall": 0.846154,
+          "slice": "on_hosting_platform=False"
+        },
+        {
+          "fpr": 0.045273,
+          "n": 942,
+          "n_negative": 751,
+          "n_positive": 191,
+          "recall": 0.565445,
+          "slice": "scheme_less=True"
+        },
+        {
+          "fpr": 0.054878,
+          "n": 954,
+          "n_negative": 492,
+          "n_positive": 462,
+          "recall": 0.963203,
+          "slice": "scheme_less=False"
+        }
+      ]
+    },
+    "RF_rf_importance": {
+      "classifier": "rf",
+      "fn_bare_homepage_count": 75,
+      "fn_bare_homepage_share": 0.862069,
+      "n_false_negatives": 87,
+      "overall_holdout_fpr": 0.053097,
+      "overall_holdout_recall": 0.866769,
+      "rf_feature_importances_top20": [
+        {
+          "feature": "path_length",
+          "importance": 0.17754
+        },
+        {
+          "feature": "path_entropy",
+          "importance": 0.112463
+        },
+        {
+          "feature": "path_depth",
+          "importance": 0.076979
+        },
+        {
+          "feature": "url_entropy",
+          "importance": 0.072575
+        },
+        {
+          "feature": "url_length",
+          "importance": 0.070955
+        },
+        {
+          "feature": "dot_count",
+          "importance": 0.057966
+        },
+        {
+          "feature": "special_char_ratio",
+          "importance": 0.050341
+        },
+        {
+          "feature": "registrable_domain_length",
+          "importance": 0.048048
+        },
+        {
+          "feature": "tld_length",
+          "importance": 0.047089
+        },
+        {
+          "feature": "special_char_count",
+          "importance": 0.044237
+        },
+        {
+          "feature": "distinct_char_ratio",
+          "importance": 0.040221
+        },
+        {
+          "feature": "letter_ratio",
+          "importance": 0.036671
+        },
+        {
+          "feature": "max_consonant_run",
+          "importance": 0.034488
+        },
+        {
+          "feature": "host_entropy",
+          "importance": 0.030919
+        },
+        {
+          "feature": "host_bigram_distinct_count",
+          "importance": 0.022898
+        },
+        {
+          "feature": "host_trigram_distinct_count",
+          "importance": 0.017878
+        },
+        {
+          "feature": "longest_subdomain_label",
+          "importance": 0.016823
+        },
+        {
+          "feature": "hostname_length",
+          "importance": 0.016436
+        },
+        {
+          "feature": "digit_count",
+          "importance": 0.01386
+        },
+        {
+          "feature": "max_digit_run",
+          "importance": 0.011612
+        }
+      ],
+      "selector": "rf_importance",
+      "slices": [
+        {
+          "fpr": 0.952381,
+          "n": 452,
+          "n_negative": 21,
+          "n_positive": 431,
+          "recall": 0.972158,
+          "slice": "has_path=True"
+        },
+        {
+          "fpr": 0.037643,
+          "n": 1444,
+          "n_negative": 1222,
+          "n_positive": 222,
+          "recall": 0.662162,
+          "slice": "has_path=False"
+        },
+        {
+          "fpr": 0.0,
+          "n": 4,
+          "n_negative": 1,
+          "n_positive": 3,
+          "recall": 1.0,
+          "slice": "on_hosting_platform=True"
+        },
+        {
+          "fpr": 0.05314,
+          "n": 1892,
+          "n_negative": 1242,
+          "n_positive": 650,
+          "recall": 0.866154,
+          "slice": "on_hosting_platform=False"
+        },
+        {
+          "fpr": 0.058589,
+          "n": 942,
+          "n_negative": 751,
+          "n_positive": 191,
+          "recall": 0.633508,
+          "slice": "scheme_less=True"
+        },
+        {
+          "fpr": 0.044715,
+          "n": 954,
+          "n_negative": 492,
+          "n_positive": 462,
+          "recall": 0.963203,
+          "slice": "scheme_less=False"
+        }
+      ]
+    }
+  },
+  "finalist_selection": {
+    "cv_criterion": "Mean balanced accuracy across 5-fold StratifiedGroupKFold \u00d7 3 seeds (seeds 42, 43, 44) on training partition only.",
+    "finalist_selection_basis": "hold-out balanced_accuracy (after G-1 screening on hold-out margin)",
+    "finalists": [
+      {
+        "classifier": "rf",
+        "cv_bacc_mean": 0.912291,
+        "cv_bacc_std": 0.011061,
+        "g1_margin": 0.064308,
+        "g4_gap": 0.009847,
+        "holdout_bacc": 0.906836,
+        "rank": 1,
+        "selector": "rf_importance"
+      },
+      {
+        "classifier": "rf",
+        "cv_bacc_mean": 0.912103,
+        "cv_bacc_std": 0.01084,
+        "g1_margin": 0.063464,
+        "g4_gap": 0.011096,
+        "holdout_bacc": 0.905992,
+        "rank": 1,
+        "selector": "rfe_rf"
+      },
+      {
+        "classifier": "rf",
+        "cv_bacc_mean": 0.902706,
+        "cv_bacc_std": 0.009788,
+        "g1_margin": 0.062335,
+        "g4_gap": 0.001184,
+        "holdout_bacc": 0.904863,
+        "rank": 1,
+        "selector": "mutual_info"
+      },
+      {
+        "classifier": "rf",
+        "cv_bacc_mean": 0.909645,
+        "cv_bacc_std": 0.011896,
+        "g1_margin": 0.059272,
+        "g4_gap": 0.011236,
+        "holdout_bacc": 0.9018,
+        "rank": 1,
+        "selector": "l1_lr"
+      },
+      {
+        "classifier": "knn",
+        "cv_bacc_mean": 0.900606,
+        "cv_bacc_std": 0.013364,
+        "g1_margin": 0.056365,
+        "g4_gap": 0.005322,
+        "holdout_bacc": 0.898893,
+        "rank": 1,
+        "selector": "l1_lr"
+      },
+      {
+        "classifier": "knn",
+        "cv_bacc_mean": 0.889405,
+        "cv_bacc_std": 0.012903,
+        "g1_margin": 0.052692,
+        "g4_gap": 0.004609,
+        "holdout_bacc": 0.89522,
+        "rank": 1,
+        "selector": "rf_importance"
+      },
+      {
+        "classifier": "knn",
+        "cv_bacc_mean": 0.889699,
+        "cv_bacc_std": 0.012758,
+        "g1_margin": 0.052406,
+        "g4_gap": 0.005845,
+        "holdout_bacc": 0.894934,
+        "rank": 1,
+        "selector": "rfe_rf"
+      }
+    ],
+    "holdout_criterion": "Hold-out evaluated ONCE per combination (25 evaluations total). No hyper-parameter tuning on hold-out. Best model selected as highest hold-out balanced_accuracy among G-1-passing combinations.",
+    "n_holdout_evaluations": 25
+  },
+  "gate_scorecard": [
+    {
+      "best_model_holdout_bacc": 0.906836,
+      "gate": "G-1",
+      "margin_pp": 0.064308,
+      "name": "Shortcut margin",
+      "note": "7 of 25 combinations pass G-1.",
+      "result": "PASS",
+      "rule": "grouped-test balanced_acc > shortcut_baseline + 5 pp",
+      "shortcut_baseline": 0.842528
+    },
+    {
+      "d1_grouped_holdout_recall": 0.866769,
+      "gate": "G-2",
+      "name": "Recall",
+      "note": "Best RF recall on D1 hold-out = 0.8668 (< 0.90). E2 is not yet available; E2 recall cannot be measured.",
+      "result": "FAIL",
+      "rule": "recall >= 90% on D1 grouped hold-out; >= 80% on E2"
+    },
+    {
+      "d1_grouped_holdout_fpr_reference": 0.053097,
+      "gate": "G-3",
+      "name": "Block FPR",
+      "note": "E1 hold-out is not yet available. D1 FPR (reference only, not E1) = 0.0531 (5.31%). Gate requires E1.",
+      "result": "NOT_MEASURABLE",
+      "rule": "FPR <= 0.5% on E1 hold-out with allowlist off (95% Wilson interval reported)"
+    },
+    {
+      "gate": "G-4",
+      "max_gap_across_25_runs_pp": 0.022609,
+      "name": "Generalization gap",
+      "note": "All 25 combinations pass. Largest gap = 0.0226 pp.",
+      "result": "PASS",
+      "rule": "random-split minus grouped-split balanced_acc <= 5 pp"
+    },
+    {
+      "gate": "G-5",
+      "name": "Python / TypeScript parity",
+      "note": "TypeScript port is Chunk 8. PAR-01 parity tests not yet written.",
+      "result": "NOT_MEASURABLE",
+      "rule": "risk within 1 point on 100% of dataset URLs and golden vectors"
+    },
+    {
+      "gate": "G-6",
+      "name": "Performance",
+      "note": "Extension integration is Chunk 9. Browser timing benchmarks not yet run.",
+      "result": "NOT_MEASURABLE",
+      "rule": "inference p95 < 15 ms warm; end-to-end < 30 ms warm; cold start < 150 ms"
+    },
+    {
+      "best_rf_brier_uncalibrated": 0.0603,
+      "best_rf_ece_uncalibrated": 0.014575,
+      "gate": "G-7",
+      "name": "Calibration",
+      "note": "Uncalibrated RF ECE = 0.0146 (threshold 0.05). Platt/isotonic calibration is Chunk 6 and requires E1 for threshold tuning. Cannot declare pass/fail until calibration is applied.",
+      "result": "NOT_MEASURABLE",
+      "rule": "ECE <= 0.05; Brier score reported"
+    },
+    {
+      "gate": "G-8",
+      "name": "Robustness",
+      "note": "Adversarial transformation suite (ML-06) is part of Chunk 6. Not yet run.",
+      "result": "NOT_MEASURABLE",
+      "rule": "recall on adversarial suite drops <= 10 pp vs clean"
+    }
+  ],
+  "generated_at_utc": "2026-11-16T17:53:52.025760+00:00",
+  "hgb_reference_baseline": {
+    "g1_margin_vs_shortcut": 0.073418,
+    "holdout_balanced_accuracy": 0.915946,
+    "holdout_fpr": 0.056315,
+    "holdout_recall": 0.888208,
+    "model": "HistGradientBoostingClassifier",
+    "note": "Reference ceiling \u2014 NOT a deployment candidate (no selector, all 50 features, no TypeScript export path)."
+  },
+  "schema": "fs1",
+  "shortcut_baseline_balanced_acc": 0.842528
+}
