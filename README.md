@@ -14,9 +14,9 @@ We are executing against the 12 chunks defined in PRD v2.0:
 |---|-------|----------------------|--------|
 | 1 | **Spike & scaffold** | Repo layout, bare MV3 extension, race harness, frozen permissions | ✅ Complete |
 | 2 | **Dataset profile** | N-01 to N-13 normalizer, Mozilla PSL parser, `profile.py`, shortcut audit, `PROVENANCE.md` | ✅ Complete |
-| 3 | **Data build** | Cleaned D1, frozen grouped splits, real E1 & E2 hold-out sets | ⏳ Next |
-| 4 | **Normalization & features** | Python feature extraction (50 deployable features under N-13) & golden vectors | 📋 Queued |
-| 5 | **Benchmark** | Grouped splits, 25 runs, leakage guards, candidate model evaluations | 📋 Queued |
+| 3 | **Data build** | D1 cleaning/splits and E1 structural build; review and E2 pending | PARTIAL |
+| 4 | **Normalization & features** | Python feature extraction, specification and tests | COMPLETE |
+| 5 | **Benchmark** | Benchmarking deliverables | TEAMMATE-OWNED |
 | 6 | **Calibration & gates** | Threshold calibration, Gates G-1 to G-8 including adversarial suite | 📋 Queued |
 | 7 | **Export** | Binary model packager (`model.bin`, `PGM1`), manifest, joblib oracle | 📋 Queued |
 | 8 | **TypeScript port** | Full on-device TypeScript runtime, Parity tests (G-5) | 📋 Queued |
@@ -74,7 +74,7 @@ Install pinned dependencies from `requirements.lock`, then run:
 python -m pytest tests/ -v
 ```
 
-Current test suite: **139 tests passed, 0 failed, 0 skipped**.
+Current test suite: **166 tests passed, 0 failed**.
 
 ---
 

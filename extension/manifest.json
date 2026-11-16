@@ -4,38 +4,29 @@
   "version": "0.1.0",
   "description": "On-device ML phishing detection. Zero data sent off-device.",
   "minimum_chrome_version": "120",
-
-  "permissions": ["storage", "webNavigation", "alarms"],
-  "optional_permissions": ["scripting"],
+  "permissions": [
+    "storage",
+    "webNavigation",
+    "alarms"
+  ],
+  "optional_permissions": [
+    "scripting"
+  ],
   "host_permissions": [],
-  "optional_host_permissions": ["<all_urls>"],
-
+  "optional_host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "src/sw/worker.js",
     "type": "module"
   },
-
   "action": {
     "default_popup": "src/pages/popup.html",
-    "default_icon": {
-      "16":  "public/icons/icon16.png",
-      "48":  "public/icons/icon48.png",
-      "128": "public/icons/icon128.png"
-    },
     "default_title": "PhishGuard"
   },
-
   "options_page": "src/pages/options.html",
-
-  "icons": {
-    "16":  "public/icons/icon16.png",
-    "48":  "public/icons/icon48.png",
-    "128": "public/icons/icon128.png"
-  },
-
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self'"
   },
-
   "web_accessible_resources": []
 }
