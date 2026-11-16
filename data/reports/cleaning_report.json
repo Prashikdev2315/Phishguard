@@ -1,0 +1,55 @@
+{
+  "class_counts_cleaned": {
+    "Benign": 6170,
+    "Malicious": 3507
+  },
+  "class_counts_source": {
+    "Benign": 6500,
+    "Malicious": 4500
+  },
+  "deduplication": {
+    "exact_duplicates_dropped": 152,
+    "normalized_duplicates_dropped": 1
+  },
+  "domain_cap": {
+    "Benign": {
+      "cap_per_domain": 65,
+      "domains": 3378,
+      "domains_over_cap": 6,
+      "rows_after_cap": 6170,
+      "rows_before_cap": 6499,
+      "rows_dropped_by_cap": 320,
+      "rows_with_domain": 6490,
+      "rows_without_domain": 9
+    },
+    "Malicious": {
+      "cap_per_domain": 50,
+      "domains": 2291,
+      "domains_over_cap": 3,
+      "rows_after_cap": 3507,
+      "rows_before_cap": 4348,
+      "rows_dropped_by_cap": 727,
+      "rows_with_domain": 4234,
+      "rows_without_domain": 114
+    }
+  },
+  "domain_cap_violations": 0,
+  "generated_at_utc": "2026-11-16T08:31:09.422187+00:00",
+  "normalization_errors": 0,
+  "normalized_cross_label_conflicts": 0,
+  "output_sha256": {
+    "D1_cleaned.csv": "136e5bf74cc0c20e3dc2d092a3612bf013f94142a5e42cd3d647fe46e4f62509",
+    "test.csv": "3079beba28e29735b54a20422d2dbf81954b397e7bf76f4e44bca46edc2f2979",
+    "train.csv": "28289f97a0a03caa2b9358f128ec49acf050b78835f8cfd9fbf3670c86cbe560"
+  },
+  "rows": {
+    "after_domain_validation_and_cap": 9677,
+    "after_exact_and_normalized_deduplication": 10847,
+    "after_normalization": 11000,
+    "source": 11000,
+    "without_registrable_domain": 123
+  },
+  "seed": 42,
+  "source_file": "Dataset.csv",
+  "source_sha256": "429d6048d1e53b244789c5649914b340017687415ba11ad8897617fcc7eac38f"
+}

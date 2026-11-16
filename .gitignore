@@ -30,6 +30,9 @@ data/raw/*.parquet
 *.csv.gz
 *.csv.zip
 
+# Feature cache files
+*.npz
+
 .playwright_profile/
 __pycache__/
 .pytest_cache/

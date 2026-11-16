@@ -1,0 +1,34 @@
+{
+  "cv_manifest": "data/splits/cv_folds.json",
+  "group_column": "registrable_domain",
+  "grouped": {
+    "domain_overlap_count": 0,
+    "test_class_counts": {
+      "Benign": 1243,
+      "Malicious": 653
+    },
+    "test_domains": 1122,
+    "test_rows": 1896,
+    "train_class_counts": {
+      "Benign": 4927,
+      "Malicious": 2854
+    },
+    "train_domains": 4522,
+    "train_rows": 7781
+  },
+  "grouped_method": "StratifiedGroupKFold(n_splits=5, shuffle=True); first fold used as 20% hold-out",
+  "random_stratified_comparison": {
+    "domain_overlap_count": 593,
+    "test_class_counts": {
+      "Benign": 1234,
+      "Malicious": 702
+    },
+    "test_rows": 1936,
+    "train_class_counts": {
+      "Benign": 4936,
+      "Malicious": 2805
+    },
+    "train_rows": 7741
+  },
+  "seed": 42
+}

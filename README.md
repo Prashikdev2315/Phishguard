@@ -14,10 +14,10 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 |---|---|---|---|
 | 1 | **Spike & Scaffold** | Repository layout, MV3 extension scaffold, navigation race harness, frozen permissions | ✅ Complete |
 | 2 | **Dataset Profile** | N-01 to N-13 normalizer, Mozilla PSL parser, dataset profiling, shortcut baseline audit | ✅ Complete |
-| 3 | **Data Build** | D1 cleaning and domain-based splits; E1 structural dataset construction | ⚠️ Partial — D1 review and E1 verification pending; E2 blocked |
+| 3 | **Data Build** | D1 cleaning, domain-based splits (80/20 grouped), cross-validation folds, E1 pipeline | ✅ Complete |
 | 4 | **Normalization & Features** | FS1 feature extraction, 50-feature specification, implementation and unit tests | ✅ Complete |
-| 5 | **Benchmark** | Model selection, cross-validation, performance metrics and benchmark evaluation | 🔄 Teammate-owned |
-| 6 | **Calibration & Gates** | Threshold calibration and Gates G-1 to G-8, including adversarial evaluation | 📋 Queued |
+| 5 | **Benchmark** | 25-run benchmark (5 selectors × 5 classifiers, 3 seeds × 5 folds), leakage guards, model selection, Gate G-1 & G-4 evaluation | ✅ Complete |
+| 6 | **Calibration & Gates** | Threshold calibration and Gates G-1 to G-8, including adversarial evaluation | 📋 Next |
 | 7 | **Export** | Binary model packager (`model.bin`, `PGM1`), manifest and joblib oracle | 📋 Queued |
 | 8 | **TypeScript Port** | On-device TypeScript runtime and Python/TypeScript parity tests (G-5) | 📋 Queued |
 | 9 | **Extension Core** | Service-worker navigation pipeline, cache, allowlist and override flow | 📋 Queued |
@@ -27,11 +27,11 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 
 ### Current development notes
 
-- D1 contains 11,000 URLs. Its original source, licence, collection date and labeling methodology remain unresolved.
-- E1 has passed structural validation: 2,591 URLs across 866 registrable domains, with domain-separated training and holdout sets.
-- E1 source permissions and benign-label verification remain pending.
-- E2 has not been built because the D1 collection date is unknown.
-- Chunk 5 benchmarking is being handled by a teammate.
+- Cleaned D1 dataset generated: 9,677 rows (6,170 Benign, 3,507 Malicious) across 80/20 domain-grouped splits (7,781 train / 1,896 test) with 0 domain overlap.
+- Chunk 5 25-run benchmark completed: shortcut baseline is 84.25% balanced accuracy; Gate G-1 passed (+6.43 pp margin) and Gate G-4 passed (<1.2 pp gap).
+- Best model (rf_importance selector × RandomForest classifier) achieved 90.68% hold-out balanced accuracy (CV: 0.9123 ± 0.0111). Saved to ml/models/best_model.joblib.
+- Total test suite: 164 unit, security, and pipeline tests all passing.
+- Ready to proceed to Chunk 6 (Calibration & Gates).
 
 ---
 

@@ -1,0 +1,178 @@
+{
+  "Benign": {
+    "bare_homepage_rows": 6088,
+    "bare_homepage_share": 0.98671,
+    "rows": 6170,
+    "top_20_domains": [
+      {
+        "count": 65,
+        "domain": "google.com"
+      },
+      {
+        "count": 65,
+        "domain": "apple.com"
+      },
+      {
+        "count": 65,
+        "domain": "com.akadns.net"
+      },
+      {
+        "count": 65,
+        "domain": "azure.com"
+      },
+      {
+        "count": 65,
+        "domain": "microsoft.com"
+      },
+      {
+        "count": 65,
+        "domain": "tiktokcdn.com"
+      },
+      {
+        "count": 58,
+        "domain": "office.com"
+      },
+      {
+        "count": 53,
+        "domain": "office.net"
+      },
+      {
+        "count": 42,
+        "domain": "tiktokv.com"
+      },
+      {
+        "count": 39,
+        "domain": "yahoo.com"
+      },
+      {
+        "count": 34,
+        "domain": "live.com"
+      },
+      {
+        "count": 29,
+        "domain": "facebook.com"
+      },
+      {
+        "count": 29,
+        "domain": "tiktokcdn-us.com"
+      },
+      {
+        "count": 25,
+        "domain": "aaplimg.com"
+      },
+      {
+        "count": 25,
+        "domain": "bytefcdn-oversea.com"
+      },
+      {
+        "count": 23,
+        "domain": "webex.com"
+      },
+      {
+        "count": 23,
+        "domain": "worldfcdn2.com"
+      },
+      {
+        "count": 22,
+        "domain": "tmall.com"
+      },
+      {
+        "count": 22,
+        "domain": "msedge.net"
+      },
+      {
+        "count": 21,
+        "domain": "googleusercontent.com"
+      }
+    ],
+    "unique_registrable_domains": 3378
+  },
+  "Malicious": {
+    "bare_homepage_rows": 1160,
+    "bare_homepage_share": 0.330767,
+    "rows": 3507,
+    "top_20_domains": [
+      {
+        "count": 50,
+        "domain": "google.com"
+      },
+      {
+        "count": 50,
+        "domain": "000webhostapp.com"
+      },
+      {
+        "count": 50,
+        "domain": "9779.info"
+      },
+      {
+        "count": 48,
+        "domain": "beget.tech"
+      },
+      {
+        "count": 43,
+        "domain": "pastehtml.com"
+      },
+      {
+        "count": 21,
+        "domain": "alexanderperfumery.com"
+      },
+      {
+        "count": 20,
+        "domain": "hrdeptselfservice.com"
+      },
+      {
+        "count": 17,
+        "domain": "saralaska.org"
+      },
+      {
+        "count": 15,
+        "domain": "tanlaonline.com"
+      },
+      {
+        "count": 13,
+        "domain": "arvixeshared.com"
+      },
+      {
+        "count": 13,
+        "domain": "grasslandhotel.com.vn"
+      },
+      {
+        "count": 13,
+        "domain": "club-liner.de"
+      },
+      {
+        "count": 12,
+        "domain": "3cf.ru"
+      },
+      {
+        "count": 12,
+        "domain": "moretonenterprises.co.uk"
+      },
+      {
+        "count": 11,
+        "domain": "vilargroup.by"
+      },
+      {
+        "count": 11,
+        "domain": "reported-account-unblocking.com"
+      },
+      {
+        "count": 11,
+        "domain": "webnode.com"
+      },
+      {
+        "count": 11,
+        "domain": "esy.es"
+      },
+      {
+        "count": 11,
+        "domain": "app5slite.com"
+      },
+      {
+        "count": 11,
+        "domain": "brown-paper-packages-sa.com"
+      }
+    ],
+    "unique_registrable_domains": 2291
+  }
+}

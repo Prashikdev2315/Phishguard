@@ -1,0 +1,169 @@
+{
+  "classifier": "rf",
+  "cv_metrics": {
+    "accuracy": {
+      "max": 0.937304,
+      "mean": 0.920281,
+      "min": 0.90215,
+      "std": 0.009405
+    },
+    "balanced_accuracy": {
+      "max": 0.932298,
+      "mean": 0.912291,
+      "min": 0.885642,
+      "std": 0.011061
+    },
+    "brier": {
+      "max": 0.074675,
+      "mean": 0.063659,
+      "min": 0.051207,
+      "std": 0.006126
+    },
+    "ece": {
+      "max": 0.038737,
+      "mean": 0.029048,
+      "min": 0.018005,
+      "std": 0.006395
+    },
+    "f1": {
+      "max": 0.919971,
+      "mean": 0.88987,
+      "min": 0.858065,
+      "std": 0.015104
+    },
+    "f2": {
+      "max": 0.921965,
+      "mean": 0.885828,
+      "min": 0.839646,
+      "std": 0.017736
+    },
+    "fnr": {
+      "max": 0.172199,
+      "mean": 0.116782,
+      "min": 0.0767,
+      "std": 0.02062
+    },
+    "fpr": {
+      "max": 0.07684,
+      "mean": 0.058635,
+      "min": 0.034588,
+      "std": 0.010059
+    },
+    "mcc": {
+      "max": 0.866911,
+      "mean": 0.82726,
+      "min": 0.784777,
+      "std": 0.020549
+    },
+    "pr_auc": {
+      "max": 0.963395,
+      "mean": 0.940766,
+      "min": 0.919457,
+      "std": 0.01312
+    },
+    "precision": {
+      "max": 0.941379,
+      "mean": 0.896956,
+      "min": 0.870722,
+      "std": 0.017741
+    },
+    "recall": {
+      "max": 0.9233,
+      "mean": 0.883218,
+      "min": 0.827801,
+      "std": 0.02062
+    },
+    "roc_auc": {
+      "max": 0.974139,
+      "mean": 0.964362,
+      "min": 0.954992,
+      "std": 0.005098
+    }
+  },
+  "feature_count": 50,
+  "feature_names": [
+    "url_length",
+    "hostname_length",
+    "path_length",
+    "query_length",
+    "fragment_length",
+    "tld_length",
+    "subdomain_count",
+    "path_depth",
+    "query_param_count",
+    "dot_count",
+    "hyphen_count",
+    "underscore_count",
+    "at_symbol_count",
+    "double_slash_in_path",
+    "non_default_port",
+    "has_ip_host",
+    "digit_count",
+    "digit_ratio",
+    "letter_ratio",
+    "uppercase_ratio",
+    "special_char_count",
+    "special_char_ratio",
+    "percent_encoded_count",
+    "equals_count",
+    "ampersand_count",
+    "tilde_count",
+    "sensitive_word_count",
+    "action_word_count",
+    "keyword_in_host",
+    "keyword_in_path",
+    "brand_in_subdomain_or_path",
+    "is_url_shortener",
+    "is_free_hosting",
+    "registrable_domain_length",
+    "domain_hyphen_count",
+    "domain_digit_count",
+    "is_punycode",
+    "mixed_script_host",
+    "suspicious_tld",
+    "longest_subdomain_label",
+    "embedded_url_in_path_or_query",
+    "url_entropy",
+    "host_entropy",
+    "path_entropy",
+    "query_entropy",
+    "distinct_char_ratio",
+    "max_digit_run",
+    "max_consonant_run",
+    "host_bigram_distinct_count",
+    "host_trigram_distinct_count"
+  ],
+  "gates": {
+    "G1_margin": 0.064308,
+    "G1_pass": true,
+    "G4_gap": 0.009847,
+    "G4_pass": true,
+    "G4_random_balanced_acc": 0.916683
+  },
+  "generated_at_utc": "2026-11-16T08:57:48.553339+00:00",
+  "holdout_metrics": {
+    "accuracy": 0.919304,
+    "balanced_accuracy": 0.906836,
+    "brier": 0.0603,
+    "ece": 0.014575,
+    "f1": 0.880934,
+    "f2": 0.87238,
+    "fnr": 0.133231,
+    "fpr": 0.053097,
+    "mcc": 0.82018,
+    "n_negative": 1243,
+    "n_positive": 653,
+    "pr_auc": 0.946173,
+    "precision": 0.89557,
+    "recall": 0.866769,
+    "roc_auc": 0.96783
+  },
+  "k": 20,
+  "model_sha256": "79d822a1e3569ff9142f3bb659dbcd36466b56b83596ac7a1e7c039f3560c1a7",
+  "schema": "fs1",
+  "seed": 42,
+  "selector": "rf_importance",
+  "shortcut_baseline_balanced_acc": 0.842528,
+  "test_sha256": "3079beba28e29735b54a20422d2dbf81954b397e7bf76f4e44bca46edc2f2979",
+  "train_sha256": "28289f97a0a03caa2b9358f128ec49acf050b78835f8cfd9fbf3670c86cbe560"
+}
