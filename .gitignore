@@ -29,3 +29,8 @@ data/raw/*.csv
 data/raw/*.parquet
 *.csv.gz
 *.csv.zip
+
+.playwright_profile/
+__pycache__/
+.pytest_cache/
+.venv/
