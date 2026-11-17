@@ -1,8 +1,8 @@
 {
   "binary_file": "extension/public/model.bin",
   "binary_format": "PGM1",
-  "binary_sha256": "88ff33966796d94ebd3841e8a840db9eaa20f5de7384cba1d08372aa8bc4d24a",
-  "binary_size_bytes": 1590495,
+  "binary_sha256": "a63e3752d11a73b0087eb168fc54d05975ddc4d8821f3ef957bd6a1209d6aae0",
+  "binary_size_bytes": 1708006,
   "calibration": {
     "ece": 4.37254653510319e-17,
     "method": "isotonic",
