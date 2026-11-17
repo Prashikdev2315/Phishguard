@@ -27,6 +27,11 @@ Thumbs.db
 *.swo
 
 # Raw bulk datasets (PRD R-08 / O-01: do not redistribute raw datasets in git)
+data/external/
+data/splits/
+data/raw/
+data/processed/
+data/reports/*.log
 data/raw/*.csv
 data/raw/*.parquet
 *.csv.gz
