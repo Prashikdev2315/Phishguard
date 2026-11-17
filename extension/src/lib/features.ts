@@ -76,7 +76,7 @@ export function extractFeatures(url: string, suspiciousTlds: Record<string, bool
   if (result.error) throw new Error(`URL normalization failed: ${result.error}`);
   const host = result.puny_host.toLowerCase();
   const path = result.path;
-  const query = result.query.startsWith("?") ? result.query.slice(1) : result.query;
+  const query = result.query.replace(/^\?+/, "");
   const fragment = result.fragment.startsWith("#") ? result.fragment.slice(1) : result.fragment;
   const lexical = result.normalized.replace(/^https?:\/\//i, "");
   const decodedLexical = result.decoded_url.replace(/^https?:\/\//i, "");

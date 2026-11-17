@@ -1,4 +1,4 @@
-import punycode from "punycode/";
+import punycode from "punycode";
 import { NormalizeResult } from "./types";
 import { PublicSuffixList } from "./psl";
 
@@ -78,13 +78,19 @@ export function normalize(raw: string, psl = DEFAULT_PSL): NormalizeResult {
   const ip = isIpHost(displayHost);
   const port = parsed.port && !((scheme === "http" && parsed.port === "80") || (scheme === "https" && parsed.port === "443"))
     ? `:${parsed.port}` : "";
-  const path = resolvePath(parsed.pathname);
+  const authorityStart = withScheme.indexOf("://") + 3;
+  const relative = withScheme.slice(authorityStart);
+  const authorityEnd = relative.search(/[/?#]/);
+  const remainder = authorityEnd < 0 ? "" : relative.slice(authorityEnd);
+  const rawPath = remainder.split(/[?#]/, 1)[0];
+  const pathWithoutParams = rawPath.replace(/;[^/]*$/, "");
+  const path = resolvePath(pathWithoutParams);
   const query = parsed.search;
   const fragment = parsed.hash;
   const authority = `${punyHost}${port}`;
   const normalized = `${scheme}://${authority}${path}${query}${fragment}`;
   if (normalized.length > MAX_URL_LENGTH) return emptyResult(raw, "url_too_long");
-  const cacheQuery = stripTracking(query.slice(1));
+  const cacheQuery = stripTracking(query.replace(/^\?+/, ""));
   const cacheKey = `${scheme}://${authority}${path}${cacheQuery ? `?${cacheQuery}` : ""}`;
   const suffix = ip ? null : psl.publicSuffix(punyHost);
   const registrable = ip ? null : psl.registrableDomain(punyHost);

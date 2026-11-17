@@ -1,3 +1,5 @@
+import { PSL_TEXT } from "./psl_data";
+
 const MINIMAL_PSL = `
 com
 net
@@ -51,7 +53,7 @@ export class PublicSuffixList {
   private readonly wildcards = new Set<string>();
   private readonly exceptions = new Set<string>();
 
-  constructor(text = MINIMAL_PSL) {
+  constructor(text = PSL_TEXT || MINIMAL_PSL) {
     for (const raw of text.split(/\r?\n/)) {
       const line = raw.trim().toLowerCase();
       if (!line || line.startsWith("//")) continue;
