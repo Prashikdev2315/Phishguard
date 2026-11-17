@@ -196,9 +196,9 @@ Passing these tests demonstrates the tested Python behavior; it does not by itse
 | Sensitive-word seed | Matches the ten PRD seed words. |
 | Action-word curation | Outstanding: current file is `PLACEHOLDER`; curate from reviewed phishing-report evidence and document source/version. |
 | Brand curation | Outstanding: current file is `PLACEHOLDER`; compile from public phishing reports and document source/version. |
-| Python/JavaScript parity | TypeScript inference and smoke parity tests are implemented in Chunk 8; exhaustive dataset parity remains a release gate. |
+| Python/JavaScript parity | TypeScript normalization and feature parity pass on the D1 hold-out; exhaustive model-risk parity remains a release gate. |
 | Full extension inference | Not implemented in the current service-worker spike; coordinate with the extension owner. |
-| Final feature contract review | Path-only semantics are now frozen for `keyword_in_path` and `brand_in_subdomain_or_path`; IP-host domain constants are explicit in `feature_spec.json`. List curation and exhaustive Python/TypeScript parity remain outstanding. |
+| Final feature contract review | Path-only semantics are frozen for `keyword_in_path` and `brand_in_subdomain_or_path`; IP-host domain constants are explicit in `feature_spec.json`. Exhaustive model-risk parity and list curation remain outstanding. |
 
 ## 7. Files of record
 

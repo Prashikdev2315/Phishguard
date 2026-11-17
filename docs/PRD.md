@@ -105,7 +105,7 @@ P0 must ship, P1 should ship, P2 is optional. Every requirement has an acceptanc
 | FR-02 | P0 | **URL normalization** by rules N-01 to N-13 (6.1). | Python and TypeScript outputs are identical for every dataset URL and every table case, including the dataset's anomalous rows. | UT-01, PAR-01 |
 | FR-03 | P0 | **Feature extraction:** the 50 URL features in frozen order (6.2). | Hand-computed vectors match; a non-finite value yields `feature_error`; Python and TypeScript agree within 1e-6. | UT-02, PAR-01 |
 | FR-04 | P0 | **Local inference:** scale, select Top-k, classify, calibrate, risk 0-100. | Matches the Python oracle within 1 risk point on all dataset URLs; inference p95 < 15 ms warm. | PAR-02, PF-01 |
-| FR-05 | P0 | **Risk bands and enforcement mode** (`block` or `warn_only`); the default mode is set by gate G-3. | Boundaries 34/35/69/70 are correct; in `warn_only` a High-Risk page gets banner and badge, never the interstitial. | UT-03, E2E-02, E2E-04 |
+| FR-05 | P0 | **Risk bands and enforcement mode** (`block` or `warn_only`); the shipped default is `warn_only`. | Boundaries 34/35/69/70 are correct; in `warn_only` a High-Risk page gets banner and badge, never the interstitial. | UT-03, E2E-02, E2E-04 |
 | FR-06 | P0 | **Reason codes:** up to 3 plain-language signals from deterministic rules (6.4). | Each rule fires on its trigger fixture and not on its negatives; a generic reason shows when no rule fires. | UT-06 |
 | FR-07 | P0 | **Result cache** keyed by hash; TTL Safe 24 h, Suspicious 6 h, High-Risk 1 h; cap 2,000 (LRU); cleared on model version change. | Hit path < 5 ms; eviction and TTL correct; survives service-worker restart; no raw URL stored. | UT-04, E2E-06, SC-06 |
 | FR-08 | P0 | **Allowlists:** bundled default list (7.2) and a user list; hosting platforms are never allowlistable at domain level. Precedence: override > user > default > model. | Precedence verified; allowlisting a multi-tenant host trusts only that tenant host. | UT-05, E2E-08 |
@@ -260,7 +260,7 @@ KNN has no native attributions, so reasons are deterministic rules over the feat
 ### 7.8 Production model selection and export
 
 - **Selection rule.** Among candidates that pass G-1 to G-4 on the grouped folds, pick the highest recall at the block-FPR target. Ties go to the smaller, faster, simpler model. RFE + KNN is preferred (as in the original brief) when it is within 1 pp of the best.
-- **Export (FR-21).** The shipped RF finalist is exported by `python -m ml.export` to `extension/public/model.bin`. The file uses the frozen PGM1 wire format: a canonical JSON header followed by a level-9 zlib payload containing the 50-value MinMax scaler arrays, 20 selected feature indices, and all 200 packed forest trees. Each tree stores node count, child indices, split features, thresholds, and float32 malicious-leaf probabilities. `ml/models/model.manifest.json` records the binary SHA-256, byte size, format, model version, calibration metadata, metric summary, gate results, thresholds, and data hashes. The artifact is strictly under 2 MiB; the joblib model stays as the Python oracle.
+- **Export (FR-21).** The shipped RF finalist is exported by `python -m ml.export` to `extension/public/model.bin`. The file uses the PGM1 wire format: a canonical JSON header followed by a level-9 zlib payload containing the 50-value MinMax scaler arrays, 20 selected feature indices, and all 200 packed forest trees. Each tree stores node count, child indices, split features, float64 thresholds, and float32 malicious-leaf probabilities. `ml/models/model.manifest.json` records the binary SHA-256, byte size, format, model version, calibration metadata, metric summary, gate results, thresholds, and data hashes. The artifact is strictly under 2 MiB; the joblib model stays as the Python oracle.
 - **Versioning.** `pg-model-1.0.0`. Model updates ship only with extension releases.
 
 ## 8. Extension specification
@@ -268,7 +268,7 @@ KNN has no native attributions, so reasons are deterministic rules over the feat
 ### 8.1 Manifest and permissions
 
 - `manifest_version` 3, minimum Chrome 120, service-worker background, toolbar action with popup, options page.
-- **Permissions:** `storage`, `webNavigation`, `alarms`. **Optional:** `scripting` plus optional host access (`<all_urls>`), used only for the in-page banner and only after the user grants it. The final list is confirmed in the M0 spike (for example, whether `tabs.update` needs the `tabs` permission) and then frozen. SC-01 fails the build if the manifest differs from the approved list.
+- **Permissions:** `storage`, `webNavigation`, `alarms`. **Optional:** `scripting` plus optional host access (`<all_urls>`), used only for the in-page banner and only after the user grants it. `activeTab` is not present. SC-01 fails the build if the manifest differs from the approved list.
 - **Evaluated in the spike, adopted only if it helps:** `declarativeNetRequest` session rules to harden repeat visits to a High-Risk URL.
 - **CSP:** `script-src 'self'; object-src 'self'; base-uri 'self'`. No remote code, no `eval`, no inline scripts.
 - `web_accessible_resources`: none, so web pages cannot frame or imitate `warning.html`. No `externally_connectable`.
@@ -311,7 +311,7 @@ Every handler validates `sender.id === chrome.runtime.id` and, for sensitive act
 ### 8.5 Lifecycle
 
 - `onInstalled` with reason `install` opens the first-run page; reason `update` shows a short 'What's new' note.
-- The worker loads and verifies the model lazily on the first event after a wake and awaits it before scoring. The hash is verified at install or update and once per browser session.
+- The worker loads the bundled model lazily on the first event after a wake and awaits it before scoring. The esbuild bundle contains the zlib and IDNA dependencies; no bare package imports are required by the unpacked extension.
 - Alarms: a daily history purge and an hourly cache sweep.
 - Per-tab scan cap (20 scans per 10 seconds); beyond it, the failure policy applies.
 

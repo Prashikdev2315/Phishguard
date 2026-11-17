@@ -56,6 +56,9 @@ Full URL never stored; path, query, fragment never persisted (SEC-06).
 | `overrides`    | session | `{ [urlHash]: expiry }`  (30-minute scoped overrides)        | Browser session                 |
 | `tabState`     | session | `{ [tabId]: { token, lastVerdict } }`                        | Browser session                 |
 
+The initial settings default is `enforcementMode="warn_only"`,
+`failureMode="open"`, and `bannerEnabled=true`.
+
 **Key-name contract** (must match exactly in service worker and all pages):
 
 ```
