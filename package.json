@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "build:extension": "node scripts/build-extension.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -11,6 +12,7 @@
     "@types/node": "^22.10.0",
     "@types/pako": "^2.0.3",
     "@types/punycode": "^2.1.4",
+    "esbuild": "^0.28.2",
     "pako": "^2.1.0",
     "punycode": "^2.3.1",
     "tsx": "^4.19.2",

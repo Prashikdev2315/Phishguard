@@ -139,7 +139,7 @@ The uncompressed payload sections are, in order, `scaler_min` (50 float32
 values), `scaler_scale` (50 float32 values), `selected_indices` (20 uint16
 values), and `forest`. The forest contains exactly 200 trees. Each tree is
 encoded as `node_count` (`uint32`) followed by `children_left` and
-`children_right` (`int32`), `feature` (`int16`), `threshold` (`float32`), and
+`children_right` (`int32`), `feature` (`int16`), `threshold` (`float64`), and
 leaf malicious probabilities (`float32`) arrays of `node_count` elements.
 Tree probabilities are averaged for inference after MinMax scaling and feature
 selection. The final file must be strictly smaller than 2 MiB.
@@ -168,6 +168,11 @@ Frozen in Chunk 1. Source: PRD §6.4. Must match exactly in Python and TypeScrip
 ---
 
 ## 9. `ml/normalize.py` behavior contract
+
+The extension release bundle is produced with esbuild. `pako` is retained only
+as a bundled zlib implementation for PGM1 payload inflation, and `punycode` is
+retained only for IDNA normalization; neither package is loaded as a bare
+runtime import by the unpacked extension.
 
 Frozen in Chunk 2. Source: PRD §6.1 (N-01 to N-13).
 TypeScript port (Chunk 8) must produce identical outputs; verified by PAR-01.
@@ -216,6 +221,7 @@ TypeScript port (Chunk 8) must produce identical outputs; verified by PAR-01.
 - Primary: `lists/psl.dat` pinned snapshot (team provides; includes private section)
 - Fallback: minimal built-in PSL in `ml/psl.py` (covers test suite + all hosting platforms)
 - **The same PSL snapshot ships in Python and TypeScript** (Chunk 8)
+- Pinned PSL SHA-256: `e029473ba3a8486cee25c52a62787f9f66389ba2288b45dac183b1efc183af3a`
 - IP hosts: `registrable_domain = None`, `public_suffix = None`
 
 ### Error precedence

@@ -62,7 +62,7 @@ export interface PendingBlock {
   cacheKeyHash?: string;
 }
 export const DEFAULT_SETTINGS: Settings = {
-  enforcementMode: "block",
+  enforcementMode: "warn_only",
   failureMode: "open",
   bannerEnabled: true,
 };

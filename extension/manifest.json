@@ -17,7 +17,7 @@
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "dist/extension/src/sw/worker.js",
+    "service_worker": "dist/worker.js",
     "type": "module"
   },
   "action": {

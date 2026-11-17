@@ -33,15 +33,15 @@ export async function scanUrl(url: string): Promise<{ verdict: RiskVerdict; norm
   if (normalized.error) throw new Error(normalized.error);
   const settings = await getSettings();
   const model = await getModel();
-  if (isDefaultAllowed(normalized) || await isUserAllowed(normalized)) {
-    const verdict: RiskVerdict = { risk: 0, probability: 0, band: "Safe", reasons: [] };
-    return { verdict, normalized };
-  }
   const overrides = await getOverrides();
   const overrideKey = await hashCacheKey(normalized.cache_key);
   if (overrides[overrideKey] && overrides[overrideKey] > Date.now()) {
     const verdict: RiskVerdict = { risk: 0, probability: 0, band: "Safe", reasons: [] };
     return { verdict, normalized, cacheKeyHash: overrideKey };
+  }
+  if (isDefaultAllowed(normalized) || await isUserAllowed(normalized)) {
+    const verdict: RiskVerdict = { risk: 0, probability: 0, band: "Safe", reasons: [] };
+    return { verdict, normalized };
   }
   const cached = await readCache(normalized.cache_key, modelVersion());
   if (cached) return { verdict: { risk: cached.risk, probability: cached.risk / 100, band: cached.band, reasons: cached.reasons }, normalized };

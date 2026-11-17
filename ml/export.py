@@ -49,7 +49,7 @@ def _tree_bytes(tree) -> bytes:
     left = np.asarray(structure.children_left, dtype="<i4")
     right = np.asarray(structure.children_right, dtype="<i4")
     feature = np.asarray(structure.feature, dtype="<i2")
-    threshold = np.asarray(structure.threshold, dtype="<f4")
+    threshold = np.asarray(structure.threshold, dtype="<f8")
     values = np.asarray(structure.value, dtype=np.float64)
     totals = values.sum(axis=2)
     probabilities = np.divide(
@@ -238,7 +238,7 @@ def load_exported_model(path: pathlib.Path) -> dict:
             ("children_left", "<i4"),
             ("children_right", "<i4"),
             ("feature", "<i2"),
-            ("threshold", "<f4"),
+            ("threshold", "<f8"),
             ("probabilities", "<f4"),
         )
         tree = {"node_count": node_count}

@@ -17,7 +17,7 @@ export interface ModelHeader {
   };
   thresholds?: { T_block: number; T_warn: number };
 }
-interface Tree { left: Int32Array; right: Int32Array; feature: Int16Array; threshold: Float32Array; probabilities: Float32Array; }
+interface Tree { left: Int32Array; right: Int32Array; feature: Int16Array; threshold: Float64Array; probabilities: Float32Array; }
 export interface ExportedModel { header: ModelHeader; scalerMin: Float32Array; scalerScale: Float32Array; selected: Uint16Array; trees: Tree[]; }
 
 const readJson = (bytes: Uint8Array): ModelHeader => JSON.parse(new TextDecoder().decode(bytes)) as ModelHeader;
@@ -33,7 +33,7 @@ export function loadModel(buffer: ArrayBuffer | Uint8Array): ExportedModel {
   const scalerScale = new Float32Array(payload.buffer, payload.byteOffset + offset, 50); offset += 200;
   const selected = new Uint16Array(payload.buffer, payload.byteOffset + offset, 20); offset += 40;
   const trees: Tree[] = [];
-  const readArray = <T extends Int32Array | Int16Array | Float32Array>(
+  const readArray = <T extends Int32Array | Int16Array | Float32Array | Float64Array>(
     ctor: { new (buffer: ArrayBuffer): T },
     bytesPerItem: number,
     count: number,
@@ -47,7 +47,7 @@ export function loadModel(buffer: ArrayBuffer | Uint8Array): ExportedModel {
     const left = readArray(Int32Array, 4, count);
     const right = readArray(Int32Array, 4, count);
     const feature = readArray(Int16Array, 2, count);
-    const threshold = readArray(Float32Array, 4, count);
+    const threshold = readArray(Float64Array, 8, count);
     const probabilities = readArray(Float32Array, 4, count);
     trees.push({ left, right, feature, threshold, probabilities });
   }
@@ -69,15 +69,18 @@ function calibrate(model: ExportedModel, raw: number): number {
   if (raw <= x[0]) return y[0];
   if (raw >= x[x.length - 1]) return y[y.length - 1];
   let i = 1;
-  while (i < x.length && raw > x[i]) i++;
+  while (i < x.length && raw >= x[i]) i++;
   const fraction = (raw - x[i - 1]) / (x[i] - x[i - 1] || 1);
   return y[i - 1] + fraction * (y[i] - y[i - 1]);
 }
 
 export function predictProbability(model: ExportedModel, features: ArrayLike<number>): number {
   if (features.length !== model.header.feature_count) throw new Error("Expected 50 features");
-  const selected = new Float32Array(model.selected.length);
-  for (let i = 0; i < selected.length; i++) selected[i] = Number(features[model.selected[i]]) * model.scalerScale[model.selected[i]] + model.scalerMin[model.selected[i]];
+  const selected = new Array<number>(model.selected.length);
+  for (let i = 0; i < selected.length; i++) {
+    const index = model.selected[i];
+    selected[i] = Math.fround(Math.fround(Number(features[index])) * model.scalerScale[index] + model.scalerMin[index]);
+  }
   let probability = 0;
   for (const tree of model.trees) {
     let node = 0;
