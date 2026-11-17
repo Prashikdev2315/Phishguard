@@ -4,7 +4,7 @@
   document.getElementById("save").addEventListener("click", async () => {
     const enforcementMode = document.querySelector("input[name=enforcement]:checked").value;
     await send("UPDATE_SETTINGS", { settings: { enforcementMode } });
-    document.getElementById("status").textContent = "Settings saved.";
+    document.getElementById("status").textContent = "✓ Settings saved! You're all set. You can close this tab and start browsing.";
   });
   document.getElementById("permission").addEventListener("click", async event => {
     if (!event.isTrusted) return;
