@@ -506,10 +506,14 @@ def main() -> None:
             file=sys.stderr,
         )
 
-    ext_path = pathlib.Path(args.extension)
-    if not ext_path.exists():
-        print(f"[race_harness] ERROR: extension not found at {ext_path.resolve()}", file=sys.stderr)
-        sys.exit(1)
+    ext_path = pathlib.Path(args.extension).resolve()
+    if not (ext_path / "manifest.json").is_file():
+        repo_ext = (pathlib.Path(__file__).resolve().parents[2] / "extension").resolve()
+        if (repo_ext / "manifest.json").is_file():
+            ext_path = repo_ext
+        else:
+            print(f"[race_harness] ERROR: manifest.json not found in {ext_path}", file=sys.stderr)
+            sys.exit(1)
 
     print(
         f"[race_harness] Starting {args.runs} navigations "

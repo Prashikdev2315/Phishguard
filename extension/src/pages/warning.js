@@ -7,7 +7,8 @@
   (async () => {
     if (params.get("failure") === "1") $("failure").classList.remove("hidden");
     const details = token ? await send("GET_BLOCK_DETAILS", { token }) : null;
-    $("host-display").textContent = details?.displayHost ? `${details.displayHost} (${details.host})` : "Destination unavailable";
+    const formatHost = (d, p) => d && p && d !== p ? `${d} (${p})` : d || p;
+    $("host-display").textContent = details?.displayHost ? formatHost(details.displayHost, details.host) : "Destination unavailable";
     const list = $("reasons"); list.replaceChildren();
     for (const reason of details?.reasons ?? []) { const item = document.createElement("li"); item.textContent = reasons[reason] ?? reason; list.appendChild(item); }
   })();

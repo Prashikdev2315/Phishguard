@@ -18,8 +18,21 @@
     if (!value) { const li = document.createElement("li"); li.className = "muted"; li.textContent = "This tab was not scanned."; list.appendChild(li); }
     $("trust").disabled = !value || value.band === "Safe";
   }
-  chrome.runtime.sendMessage({ type: "GET_TAB_STATUS" }, render);
+  const params = new URLSearchParams(location.search);
+  const targetTabId = params.get("tabId") ? Number(params.get("tabId")) : undefined;
+  chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+    const tabId = targetTabId ?? tabs?.[0]?.id;
+    chrome.runtime.sendMessage({ type: "GET_TAB_STATUS", tabId }, render);
+  });
   $("settings").addEventListener("click", event => { event.preventDefault(); chrome.runtime.openOptionsPage(); });
-  $("trust").addEventListener("click", () => chrome.runtime.sendMessage({ type: "TRUST_DOMAIN", host: verdict?.host || "" }, result => { if (result?.ok) { $("trust").textContent = "Trusted"; $("trust").disabled = true; $("toast").textContent = "Domain added to your allowlist."; } }));
+  $("trust").addEventListener("click", () => chrome.runtime.sendMessage({ type: "TRUST_DOMAIN", host: verdict?.host || "" }, result => {
+    if (result?.ok) {
+      $("trust").textContent = "Trusted";
+      $("trust").disabled = true;
+      $("toast").textContent = "Domain added to your allowlist.";
+    } else {
+      $("toast").textContent = "This domain cannot be allowlisted.";
+    }
+  }));
   $("copy").addEventListener("click", async () => { const report = `PhishGuard\nRisk: ${verdict?.risk ?? "unscanned"}/100\nBand: ${verdict?.band ?? "Error"}\nReasons: ${(verdict?.reasons ?? []).join(", ") || "none"}\nTime: ${new Date().toISOString()}`; await navigator.clipboard.writeText(report); $("toast").textContent = "Copied!"; });
 })();

@@ -27,7 +27,18 @@ chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: (
     switch (message?.type) {
       case "GET_TAB_STATUS": {
         const state = await getTabState();
-        const tab = state[String(message.tabId ?? sender.tab?.id)];
+        let tabId = message.tabId ?? sender.tab?.id;
+        if (tabId === undefined) {
+          try {
+            const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+            tabId = tabs[0]?.id;
+          } catch { /* ignore */ }
+        }
+        let tab = tabId !== undefined ? state[String(tabId)] : undefined;
+        if (!tab?.lastVerdict) {
+          const entries = Object.values(state) as Array<{ token: string; lastVerdict: any; url: string }>;
+          if (entries.length > 0) tab = entries[entries.length - 1];
+        }
         if (!tab?.lastVerdict) { sendResponse(null); break; }
         let host = "";
         try { host = new URL(tab.url).hostname; } catch { /* non-web tab */ }
@@ -66,7 +77,8 @@ chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: (
         sendResponse({ ok: true }); break;
       }
       case "UPDATE_SETTINGS": {
-        const candidate = { ...DEFAULT_SETTINGS, ...(message.settings ?? {}) } as Settings;
+        const current = await getSettings();
+        const candidate = { ...current, ...(message.settings ?? {}) } as Settings;
         if (!["block", "warn_only"].includes(candidate.enforcementMode) || !["open", "closed"].includes(candidate.failureMode) || typeof candidate.bannerEnabled !== "boolean") throw new Error("invalid_settings");
         await setSettings(candidate); sendResponse({ ok: true }); break;
       }

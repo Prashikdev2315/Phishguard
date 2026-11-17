@@ -4,7 +4,8 @@ import time
 from playwright.async_api import async_playwright
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-EXT_PATH = str(ROOT / "extension")
+EXT_PATH = str((ROOT / "extension").resolve())
+assert (pathlib.Path(EXT_PATH) / "manifest.json").is_file(), f"Manifest file missing at {EXT_PATH}"
 
 async def test_e2e():
     user_data = ROOT / ".playwright_profile_test"

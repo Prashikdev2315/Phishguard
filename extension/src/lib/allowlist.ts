@@ -11,6 +11,7 @@ export function isHostingDomain(domain: string | null): boolean {
   return !!domain && hostingDomains.has(domain);
 }
 export function canAllowlist(host: string, normalized: NormalizeResult): boolean {
+  if (isHostingDomain(host) || isHostingDomain(normalized.puny_host)) return false;
   return !isHostingDomain(normalized.registrable_domain) || host !== normalized.registrable_domain;
 }
 export function isDefaultAllowed(normalized: NormalizeResult): boolean {

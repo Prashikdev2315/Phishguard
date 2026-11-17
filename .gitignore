@@ -35,8 +35,7 @@ data/raw/*.parquet
 # Feature cache files
 *.npz
 
-.playwright_profile/
-.playwright_profile_test/
+.playwright_profile*/
 __pycache__/
 .pytest_cache/
 .venv/
