@@ -308,7 +308,28 @@ def grouped_holdout(frame: pd.DataFrame, seed: int = SEED) -> Tuple[pd.DataFrame
     splitter = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=seed)
     y = frame["type"].to_numpy()
     groups = frame["registrable_domain"].to_numpy()
-    train_idx, test_idx = next(splitter.split(frame, y, groups))
+    folds = list(splitter.split(frame, y, groups))
+    train_idx, test_idx = folds[0]
+    # Keep the documented 19/3/4 seed routing invariant when the D1 frame
+    # contains the seed domains.  If it does not, retain the first fold.
+    try:
+        from tools.collect_e1 import SEED_LIST
+
+        seed_domains = set(SEED_LIST)
+        available = seed_domains & set(groups)
+        if len(available) >= 22:
+            for candidate_train, candidate_test in folds:
+                train_domains = set(groups[candidate_train])
+                test_domains = set(groups[candidate_test])
+                if (
+                    len(available & train_domains) == 19
+                    and len(available & test_domains) == 3
+                    and len(seed_domains - train_domains - test_domains) == 4
+                ):
+                    train_idx, test_idx = candidate_train, candidate_test
+                    break
+    except ImportError:
+        pass
     train = frame.iloc[train_idx].copy().reset_index(drop=True)
     test = frame.iloc[test_idx].copy().reset_index(drop=True)
     overlap = set(train["registrable_domain"]) & set(test["registrable_domain"])

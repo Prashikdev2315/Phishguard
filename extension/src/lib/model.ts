@@ -93,7 +93,10 @@ export function predictProbability(model: ExportedModel, features: ArrayLike<num
 }
 
 export function predictRisk(model: ExportedModel, features: ArrayLike<number>): RiskVerdict {
-  const probability = Math.min(1, Math.max(0, predictProbability(model, features)));
+  const rawProbability = predictProbability(model, features);
+  if (!Number.isFinite(rawProbability)) throw new Error("model_non_finite_probability");
+  console.debug("[PhishGuard] PGM1 raw probability", rawProbability);
+  const probability = Math.min(1, Math.max(0, rawProbability));
   const risk = Math.round(100 * probability);
   const band: RiskBand = risk < 35 ? "Safe" : risk < 70 ? "Suspicious" : "High-Risk";
   return { risk, probability, band, reasons: [] };
