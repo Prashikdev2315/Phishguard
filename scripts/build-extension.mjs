@@ -24,3 +24,19 @@ await build({
   target: "es2022",
   outfile: "extension/dist/pages/warning.js",
 });
+await build({
+  entryPoints: ["extension/src/pages/options.js"],
+  bundle: true,
+  format: "iife",
+  platform: "browser",
+  target: "es2022",
+  outfile: "extension/dist/pages/options.js",
+});
+await build({
+  entryPoints: ["extension/src/pages/first_run.js"],
+  bundle: true,
+  format: "iife",
+  platform: "browser",
+  target: "es2022",
+  outfile: "extension/dist/pages/first_run.js",
+});

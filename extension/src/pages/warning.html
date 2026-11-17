@@ -1,78 +1,9 @@
-<!DOCTYPE html>
-<!--
-  warning.html — High-Risk interstitial (Chunk 1 spike stub)
-  Full copy, layout, and reason display are in Chunk 10 (UI).
-
-  Security: this page is NOT web-accessible (no web_accessible_resources entry).
-  It is reached only via tabs.update from the service worker.
-  URL-derived text is inserted via textContent, never innerHTML (SEC-05).
--->
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy"
-        content="script-src 'self'; object-src 'self'; base-uri 'self'">
-  <title>PhishGuard — Deceptive site blocked</title>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #fdf4f4;
-      color: #1a1a1a;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 1.5rem;
-      box-sizing: border-box;
-    }
-    h1 { color: #B3261E; font-size: 1.6rem; margin-bottom: .5rem; }
-    #host-display { font-family: monospace; word-break: break-all; margin: 1rem 0; }
-    #reasons { list-style: disc; padding-left: 1.5rem; }
-    button {
-      padding: .6rem 1.4rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-    #btn-back    { background: #B3261E; color: #fff; margin-right: .5rem; }
-    #btn-proceed { background: #e0e0e0; color: #333; }
-    #proceed-section { margin-top: 1rem; display: none; }
-    #risk-check  { margin-right: .4rem; }
-    .spike-note  { margin-top: 2rem; padding: .5rem 1rem;
-                   background:#fff3cd; border:1px solid #ffc107; border-radius:4px;
-                   font-size:.85rem; }
-  </style>
-</head>
-<body>
-  <h1>⚠ Deceptive site blocked</h1>
-  <p>PhishGuard thinks this address is likely a phishing page.</p>
-
-  <div id="host-display">Loading…</div>
-
-  <ul id="reasons"></ul>
-
-  <div>
-    <button id="btn-back">Go back to safety</button>
-    <button id="btn-proceed-toggle">I understand the risk, show options</button>
-  </div>
-
-  <div id="proceed-section">
-    <label>
-      <input type="checkbox" id="risk-check">
-      I understand this site may steal my information
-    </label>
-    <button id="btn-proceed" disabled>Proceed anyway</button>
-  </div>
-
-  <div class="spike-note">
-    <strong>Chunk 1 spike stub</strong> — this interstitial is shown for every
-    navigation so the race harness can measure timing. Full verdict logic is
-    wired in Chunk 9.
-  </div>
-
-  <script src="../../dist/pages/warning.js"></script>
-</body>
-</html>
+<head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'self'; base-uri 'self'"><title>PhishGuard warning</title>
+<style>body{font-family:system-ui,sans-serif;max-width:700px;margin:0 auto;padding:32px;color:#172033;background:#fff7f7}header{background:#b91c1c;color:white;padding:18px;border-radius:12px}#host-display{font-family:ui-monospace,monospace;font-weight:700;overflow-wrap:anywhere}button{padding:10px 14px;border:0;border-radius:7px;cursor:pointer;margin-right:8px}#btn-back{background:#b91c1c;color:white}#btn-proceed{background:#e2e8f0}.danger{color:#991b1b}.hidden{display:none}li{margin:8px 0}</style></head>
+<body><header role="alert"><h1>⚠ Deceptive site blocked</h1><p>PhishGuard thinks this address may be trying to steal information.</p></header>
+<main><p id="failure" class="hidden danger">PhishGuard could not verify the security of this site.</p><p id="host-display">Loading destination…</p><ul id="reasons"></ul>
+<button id="btn-back" type="button">Go back to safety</button><button id="btn-proceed-toggle" type="button" aria-expanded="false">Advanced / Show options</button>
+<section id="proceed-section" class="hidden"><label><input type="checkbox" id="risk-check"> I understand this site may steal my information</label><button id="btn-proceed" type="button" disabled>Proceed anyway</button></section></main>
+<script src="../../dist/pages/warning.js"></script></body></html>

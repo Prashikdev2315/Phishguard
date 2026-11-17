@@ -1,13 +1,27 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy"
-        content="script-src 'self'; object-src 'self'; base-uri 'self'">
-  <title>PhishGuard — Settings</title>
+  <meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'self'; base-uri 'self'">
+  <title>PhishGuard settings</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; color: #172033; } body { max-width: 900px; margin: 0 auto; padding: 28px; background: #f8fafc; }
+    section { background: white; border: 1px solid #dbe3ef; border-radius: 12px; padding: 18px; margin: 16px 0; } h1 { margin-top: 0; }
+    label { display: block; margin: 10px 0; } button, input { font: inherit; } button { padding: 8px 12px; border: 0; border-radius: 7px; cursor: pointer; background: #e2e8f0; }
+    input[type="text"] { padding: 7px; width: min(100%, 360px); } table { width: 100%; border-collapse: collapse; } th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e2e8f0; }
+    .status { min-height: 1.3em; color: #047857; } .danger { background: #fee2e2; color: #991b1b; } .muted { color: #64748b; }
+  </style>
 </head>
 <body>
-  <h1>PhishGuard Settings</h1>
-  <p>Full options UI is Chunk 10 (UI).</p>
+  <h1>PhishGuard settings</h1>
+  <p class="muted">All detection runs locally. URLs are not sent to a service.</p>
+  <section><h2>Protection</h2>
+    <fieldset><legend>High-risk enforcement</legend><label><input type="radio" name="enforcement" value="warn_only"> Warn only (recommended)</label><label><input type="radio" name="enforcement" value="block"> Block high-risk sites</label></fieldset>
+    <fieldset><legend>When verification fails</legend><label><input type="radio" name="failure" value="open"> Allow navigation</label><label><input type="radio" name="failure" value="closed"> Show verification warning</label></fieldset>
+    <label><input id="banner" type="checkbox"> Show in-page warning banner</label><p id="save-status" class="status" role="status"></p>
+  </section>
+  <section><h2>Trusted domains</h2><form id="allow-form"><label for="allow-host">Domain or tenant host</label><input id="allow-host" type="text" required placeholder="example.com"> <button type="submit">Add</button></form><ul id="allowlist"></ul></section>
+  <section><h2>Activity</h2><p id="counters">Loading statistics…</p><table><thead><tr><th>Host</th><th>Band</th><th>Risk</th><th>Action</th><th>Time</th></tr></thead><tbody id="history"></tbody></table><p><button id="clear-cache">Clear scan cache</button> <button id="clear-history">Clear history</button> <button id="clear-all" class="danger">Reset all data</button></p></section>
+  <section><h2>About and model card</h2><p><strong>Model:</strong> pg-model-1.0.0 · <strong>Schema:</strong> fs1</p><p>Random Forest with 200 trees and 20 selected features. The model analyzes URL text only and has no network telemetry.</p><p class="muted">Known limits: shared hosting, newly registered domains, and dataset bias can produce false positives or false negatives.</p></section>
+  <script src="../../dist/pages/options.js"></script>
 </body>
 </html>

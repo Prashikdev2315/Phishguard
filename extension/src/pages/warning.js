@@ -1,71 +1,18 @@
-// warning.js — spike stub for the interstitial page (Chunk 1)
-// All text inserted via textContent — never innerHTML (SEC-05).
 "use strict";
-
-(async () => {
-  const params = new URLSearchParams(location.search);
-  const token  = params.get("token");
-
-  // ── fetch verdict from worker ──────────────────────────────────────────
-  let details = null;
-  if (token) {
-    details = await new Promise(resolve => {
-      chrome.runtime.sendMessage({ type: "GET_BLOCK_DETAILS", token }, resolve);
-    });
-  }
-
-  // ── populate host display ──────────────────────────────────────────────
-  const hostEl = document.getElementById("host-display");
-  if (details?.host) {
-    hostEl.textContent = `Real address: ${details.host}`;
-  } else {
-    hostEl.textContent = "(host unavailable)";
-  }
-
-  // ── populate reasons ───────────────────────────────────────────────────
-  const reasonsEl = document.getElementById("reasons");
-  const reasons   = details?.reasons ?? ["No reason data available"];
-  for (const r of reasons) {
-    const li = document.createElement("li");
-    li.textContent = r;   // textContent only — never innerHTML
-    reasonsEl.appendChild(li);
-  }
-
-  // ── Go back ────────────────────────────────────────────────────────────
-  document.getElementById("btn-back").addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "GO_BACK", token }, () => {});
-  });
-
-  // ── Proceed-anyway flow (PRD FR-10) ───────────────────────────────────
-  // Requires: disclosure click → checkbox tick → 1 s delay → trusted click
-  let proceedEnabled = false;
-  let proceedTimer   = null;
-
-  document.getElementById("btn-proceed-toggle").addEventListener("click", e => {
-    if (!e.isTrusted) return;             // reject scripted clicks (SEC-03)
-    document.getElementById("proceed-section").style.display = "block";
-    e.currentTarget.style.display = "none";
-  });
-
-  document.getElementById("risk-check").addEventListener("change", e => {
-    if (!e.isTrusted) return;
-    const btn = document.getElementById("btn-proceed");
-    if (e.target.checked) {
-      // 1-second delay before the button becomes clickable (FR-10)
-      proceedTimer = setTimeout(() => {
-        btn.disabled = false;
-        proceedEnabled = true;
-      }, 1000);
-    } else {
-      clearTimeout(proceedTimer);
-      btn.disabled = true;
-      proceedEnabled = false;
-    }
-  });
-
-  document.getElementById("btn-proceed").addEventListener("click", e => {
-    if (!e.isTrusted) return;             // reject scripted clicks (SEC-03)
-    if (!proceedEnabled) return;
-    chrome.runtime.sendMessage({ type: "PROCEED_OVERRIDE", token }, () => {});
-  });
+(() => {
+  const params = new URLSearchParams(location.search), token = params.get("token");
+  const $ = id => document.getElementById(id);
+  const send = (type, payload = {}) => new Promise(resolve => chrome.runtime.sendMessage({ type, ...payload }, resolve));
+  const reasons = { "R-00": "The address has a suspicious overall risk pattern.", "R-01": "The address uses an IP host.", "R-02": "A brand appears outside its expected domain.", "R-03": "Sensitive action words appear repeatedly.", "R-04": "The address is unusually long.", "R-05": "The host has unusually deep subdomains.", "R-06": "The top-level domain is associated with elevated risk.", "R-07": "The host may use look-alike characters.", "R-08": "The host uses free or shared hosting.", "R-09": "The address embeds another URL.", "R-10": "Sensitive terms are used without HTTPS.", "R-11": "The host has high randomness." };
+  (async () => {
+    if (params.get("failure") === "1") $("failure").classList.remove("hidden");
+    const details = token ? await send("GET_BLOCK_DETAILS", { token }) : null;
+    $("host-display").textContent = details?.displayHost ? `${details.displayHost} (${details.host})` : "Destination unavailable";
+    const list = $("reasons"); list.replaceChildren();
+    for (const reason of details?.reasons ?? []) { const item = document.createElement("li"); item.textContent = reasons[reason] ?? reason; list.appendChild(item); }
+  })();
+  $("btn-back").addEventListener("click", event => { if (event.isTrusted) send("GO_BACK", { token }); });
+  $("btn-proceed-toggle").addEventListener("click", event => { if (!event.isTrusted) return; $("proceed-section").classList.remove("hidden"); $("btn-proceed-toggle").setAttribute("aria-expanded", "true"); });
+  $("risk-check").addEventListener("change", event => { if (!event.isTrusted) return; const button = $("btn-proceed"); button.disabled = true; if (event.target.checked) setTimeout(() => { button.disabled = false; }, 1000); });
+  $("btn-proceed").addEventListener("click", event => { if (event.isTrusted && !$("btn-proceed").disabled) send("PROCEED_OVERRIDE", { token }); });
 })();

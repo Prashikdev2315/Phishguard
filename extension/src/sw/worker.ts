@@ -18,7 +18,7 @@ chrome.webNavigation.onBeforeNavigate.addListener((details: any) => {
   if (details.frameId !== 0 || !supported(details.url)) return;
   const token = makeToken();
   tokens.set(details.tabId, token);
-  void handleNavigation(details.tabId, details.url);
+  void handleNavigation(details.tabId, details.url, token);
 });
 
 chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: (value: unknown) => void) => {
@@ -27,9 +27,15 @@ chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: (
     switch (message?.type) {
       case "GET_TAB_STATUS": {
         const state = await getTabState();
-        sendResponse(state[String(message.tabId ?? sender.tab?.id)]?.lastVerdict ?? null);
+        const tab = state[String(message.tabId ?? sender.tab?.id)];
+        if (!tab?.lastVerdict) { sendResponse(null); break; }
+        let host = "";
+        try { host = new URL(tab.url).hostname; } catch { /* non-web tab */ }
+        sendResponse({ ...tab.lastVerdict, host });
         break;
       }
+      case "GET_SETTINGS": sendResponse(await getSettings()); break;
+      case "GET_OPTIONS_DATA": sendResponse({ settings: await getSettings(), allowlist: await getUserAllowlist(), history: await getHistory(), counters: await getCounters() }); break;
       case "GET_BLOCK_DETAILS": sendResponse(message.token ? await getPending(message.token) : null); break;
       case "GO_BACK": {
         if (message.token) await removePending(message.token);
@@ -54,6 +60,11 @@ chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: (
         const normalized = normalize(String(message.host ?? ""));
         sendResponse({ ok: !normalized.error && await addUserAllowed(normalized.puny_host, normalized) }); break;
       }
+      case "REMOVE_DOMAIN": {
+        const domains = (await getUserAllowlist()).filter(domain => domain !== String(message.host ?? ""));
+        await (await import("../lib/storage")).setUserAllowlist(domains);
+        sendResponse({ ok: true }); break;
+      }
       case "UPDATE_SETTINGS": {
         const candidate = { ...DEFAULT_SETTINGS, ...(message.settings ?? {}) } as Settings;
         if (!["block", "warn_only"].includes(candidate.enforcementMode) || !["open", "closed"].includes(candidate.failureMode) || typeof candidate.bannerEnabled !== "boolean") throw new Error("invalid_settings");
@@ -77,7 +88,8 @@ chrome.alarms.onAlarm.addListener(async (alarm: any) => {
   }
   if (alarm.name === "sweep-cache") await sweepCache();
 });
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async (details: any) => {
+  if (details.reason === "install") await chrome.tabs.create({ url: chrome.runtime.getURL("src/pages/first_run.html") });
   await chrome.alarms.create("purge-history", { periodInMinutes: 1440 });
   await chrome.alarms.create("sweep-cache", { periodInMinutes: 60 });
 });

@@ -3,7 +3,7 @@ import { hashCacheKey, readCache, writeCache } from "./cache";
 import { extractFeatures, extractVector } from "./features";
 import { loadModel, predictRisk, type ExportedModel } from "./model";
 import { normalize } from "./normalize";
-import { getSettings, getCounters, setCounters, getHistory, setHistory, getOverrides } from "./storage";
+import { getSettings, getCounters, setCounters, getHistory, setHistory, getOverrides, getTabState, setTabState } from "./storage";
 import type { HistoryEntry, RiskVerdict } from "./types";
 
 declare const chrome: any;
@@ -55,10 +55,13 @@ export async function scanUrl(url: string): Promise<{ verdict: RiskVerdict; norm
   void settings;
   return { verdict, normalized, cacheKeyHash };
 }
-export async function handleNavigation(tabId: number, url: string): Promise<void> {
+export async function handleNavigation(tabId: number, url: string, token?: string): Promise<void> {
   if (!/^https?:/i.test(url)) return;
   try {
     const result = await scanUrl(url);
+    const tabState = await getTabState();
+    tabState[String(tabId)] = { token: token ?? "", lastVerdict: result.verdict, url };
+    await setTabState(tabState);
     await setBadge(tabId, result.verdict);
     await record(result.normalized.display_host, result.verdict, result.verdict.band === "High-Risk" ? "block" : result.verdict.band === "Suspicious" ? "warn" : "allow");
     const settings = await getSettings();
