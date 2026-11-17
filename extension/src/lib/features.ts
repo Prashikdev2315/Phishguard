@@ -74,7 +74,8 @@ const uniqueNgrams = (value: string, n: number): number => {
 export function extractFeatures(url: string, suspiciousTlds: Record<string, boolean> = {}): FeatureMap {
   const result = normalize(url);
   if (result.error) throw new Error(`URL normalization failed: ${result.error}`);
-  const host = result.puny_host.toLowerCase();
+  let host = result.puny_host.toLowerCase();
+  if (host.startsWith("www.")) host = host.slice(4);
   const path = result.path;
   const query = result.query.replace(/^\?+/, "");
   const fragment = result.fragment.startsWith("#") ? result.fragment.slice(1) : result.fragment;

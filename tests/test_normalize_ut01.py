@@ -47,7 +47,7 @@ from ml.psl import PSL, reset_psl
 # so UT-01 runs even when lists/psl.dat is absent.
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=True, scope="module")
 def _use_test_psl(tmp_path_factory):
     """
     Redirect normalize.get_psl() to PSL.for_testing() for the entire test session.
@@ -785,3 +785,65 @@ class TestPSLWithRealFile:
 
     def test_cloudfront_net(self, psl):
         assert psl.registrable_domain("abc.cloudfront.net") == "abc.cloudfront.net"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# N-14 — Root path canonical empty
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestN14RootPathEmpty:
+
+    def test_root_path_slash_is_canonical_empty(self):
+        r1 = _ok("https://example.com/")
+        r2 = _ok("https://example.com")
+        assert r1.path == ""
+        assert r2.path == ""
+        assert r1.normalized == "https://example.com"
+        assert r2.normalized == "https://example.com"
+        assert r1.normalized == r2.normalized
+        assert r1.cache_key == r2.cache_key
+
+    def test_relative_dot_resolving_to_root(self):
+        r = _ok("https://example.com/a/..")
+        assert r.path == ""
+        assert r.normalized == "https://example.com"
+
+    def test_non_root_path_preserved(self):
+        r = _ok("https://example.com/path")
+        assert r.path == "/path"
+        assert r.normalized == "https://example.com/path"
+
+    def test_root_path_with_query(self):
+        r = _ok("https://example.com/?q=1")
+        assert r.path == ""
+        assert r.normalized == "https://example.com?q=1"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# N-15 — Strip leading www. for feature computation
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestN15StripLeadingWww:
+
+    def test_strip_one_leading_www(self):
+        r = _ok("https://www.example.com/")
+        assert r.normalized == "https://example.com"
+        assert r.display_host == "www.example.com"
+        assert r.cache_key == "https://www.example.com"
+        assert r.puny_host == "www.example.com"
+
+    def test_strip_one_leading_www_preserves_second(self):
+        r = _ok("https://www.www.example.com")
+        assert r.normalized == "https://www.example.com"
+        assert r.display_host == "www.www.example.com"
+
+    def test_non_www_not_stripped(self):
+        r = _ok("https://example.com")
+        assert r.normalized == "https://example.com"
+        assert r.display_host == "example.com"
+
+    def test_www_hyphen_not_stripped(self):
+        r = _ok("https://www-site.com")
+        assert r.normalized == "https://www-site.com"
+        assert r.display_host == "www-site.com"
+

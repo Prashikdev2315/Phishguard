@@ -2,35 +2,35 @@
   "cv_manifest": "data/splits/cv_folds.json",
   "group_column": "registrable_domain",
   "grouped": {
-    "d1_test_domains_count": 1122,
-    "d1_test_domains_hash": "cbf6eadaadbda9093d97a623f695f8ee4f493927bdee39f131e23b091039328e",
+    "d1_test_domains_count": 1132,
+    "d1_test_domains_hash": "9032ea0d2fbf9faf7a4b57f1b884fd5deadac88552c25f0eebd92d8ce961f3d0",
     "domain_overlap_count": 0,
     "test_class_counts": {
-      "Benign": 1243,
-      "Malicious": 653
+      "Benign": 987,
+      "Malicious": 701
     },
-    "test_domains": 1122,
-    "test_rows": 1896,
+    "test_domains": 1132,
+    "test_rows": 1688,
     "train_class_counts": {
-      "Benign": 4927,
-      "Malicious": 2854
+      "Benign": 3999,
+      "Malicious": 2771
     },
-    "train_domains": 4522,
-    "train_rows": 7781
+    "train_domains": 4512,
+    "train_rows": 6770
   },
   "grouped_method": "StratifiedGroupKFold(n_splits=5, shuffle=True); first fold used as 20% hold-out",
   "random_stratified_comparison": {
-    "domain_overlap_count": 593,
+    "domain_overlap_count": 522,
     "test_class_counts": {
-      "Benign": 1234,
-      "Malicious": 702
+      "Benign": 997,
+      "Malicious": 695
     },
-    "test_rows": 1936,
+    "test_rows": 1692,
     "train_class_counts": {
-      "Benign": 4936,
-      "Malicious": 2805
+      "Benign": 3989,
+      "Malicious": 2777
     },
-    "train_rows": 7741
+    "train_rows": 6766
   },
   "seed": 42
 }

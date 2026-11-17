@@ -1,53 +1,53 @@
 {
   "class_counts_cleaned": {
-    "Benign": 6170,
-    "Malicious": 3507
+    "Benign": 4986,
+    "Malicious": 3472
   },
   "class_counts_source": {
     "Benign": 6500,
     "Malicious": 4500
   },
-  "d1_test_domains_count": 1122,
-  "d1_test_domains_hash": "cbf6eadaadbda9093d97a623f695f8ee4f493927bdee39f131e23b091039328e",
+  "d1_test_domains_count": 1132,
+  "d1_test_domains_hash": "9032ea0d2fbf9faf7a4b57f1b884fd5deadac88552c25f0eebd92d8ce961f3d0",
   "deduplication": {
     "exact_duplicates_dropped": 152,
-    "normalized_duplicates_dropped": 1
+    "normalized_duplicates_dropped": 102
   },
   "domain_cap": {
     "Benign": {
-      "cap_per_domain": 65,
+      "cap_per_domain": 5,
       "domains": 3378,
-      "domains_over_cap": 6,
-      "rows_after_cap": 6170,
-      "rows_before_cap": 6499,
-      "rows_dropped_by_cap": 320,
-      "rows_with_domain": 6490,
+      "domains_over_cap": 117,
+      "rows_after_cap": 4986,
+      "rows_before_cap": 6433,
+      "rows_dropped_by_cap": 1438,
+      "rows_with_domain": 6424,
       "rows_without_domain": 9
     },
     "Malicious": {
       "cap_per_domain": 50,
       "domains": 2291,
       "domains_over_cap": 3,
-      "rows_after_cap": 3507,
-      "rows_before_cap": 4348,
+      "rows_after_cap": 3472,
+      "rows_before_cap": 4313,
       "rows_dropped_by_cap": 727,
-      "rows_with_domain": 4234,
+      "rows_with_domain": 4199,
       "rows_without_domain": 114
     }
   },
   "domain_cap_violations": 0,
   "e1_integration": null,
-  "generated_at_utc": "2026-11-16T18:19:30.733881+00:00",
+  "generated_at_utc": "2026-11-17T09:30:35.361348+00:00",
   "normalization_errors": 0,
   "normalized_cross_label_conflicts": 0,
   "output_sha256": {
-    "D1_cleaned.csv": "136e5bf74cc0c20e3dc2d092a3612bf013f94142a5e42cd3d647fe46e4f62509",
-    "test.csv": "3079beba28e29735b54a20422d2dbf81954b397e7bf76f4e44bca46edc2f2979",
-    "train.csv": "28289f97a0a03caa2b9358f128ec49acf050b78835f8cfd9fbf3670c86cbe560"
+    "D1_cleaned.csv": "fb64274d3177ee33b17867a80ebbf12aeefc21abc5dd68431bc83dbf2de8bc2e",
+    "test.csv": "3d024188448a7516b07c49d5852255fc94ae49a20e19afc404c0d6af180a9f11",
+    "train.csv": "8d5c8e9f92c72835bdb71ed9d7a55b3e2ac0c2553dafc05509d9f764f2b8e73f"
   },
   "rows": {
-    "after_domain_validation_and_cap": 9677,
-    "after_exact_and_normalized_deduplication": 10847,
+    "after_domain_validation_and_cap": 8458,
+    "after_exact_and_normalized_deduplication": 10746,
     "after_normalization": 11000,
     "source": 11000,
     "without_registrable_domain": 123

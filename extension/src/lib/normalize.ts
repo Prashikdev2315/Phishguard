@@ -54,6 +54,20 @@ function emptyResult(raw: string, error: string): NormalizeResult {
   };
 }
 
+function safeUnquote(url: string): string {
+  return url.replace(/(%[0-9a-fA-F]{2})+/g, (match) => {
+    try {
+      return decodeURIComponent(match);
+    } catch {
+      const bytes: number[] = [];
+      for (let i = 0; i < match.length; i += 3) {
+        bytes.push(parseInt(match.slice(i + 1, i + 3), 16));
+      }
+      return new TextDecoder("utf-8", { fatal: false }).decode(new Uint8Array(bytes));
+    }
+  });
+}
+
 export function normalize(raw: string, psl = DEFAULT_PSL): NormalizeResult {
   const cleaned = trimOuter(raw);
   if (cleaned.length > MAX_URL_LENGTH) return emptyResult(raw, "url_too_long");
@@ -84,18 +98,20 @@ export function normalize(raw: string, psl = DEFAULT_PSL): NormalizeResult {
   const remainder = authorityEnd < 0 ? "" : relative.slice(authorityEnd);
   const rawPath = remainder.split(/[?#]/, 1)[0];
   const pathWithoutParams = rawPath.replace(/;[^/]*$/, "");
-  const path = resolvePath(pathWithoutParams);
+  let path = resolvePath(pathWithoutParams);
+  if (path === "/") path = "";
   const query = parsed.search;
   const fragment = parsed.hash;
   const authority = `${punyHost}${port}`;
-  const normalized = `${scheme}://${authority}${path}${query}${fragment}`;
+  const featurePunyHost = punyHost.startsWith("www.") ? punyHost.slice(4) : punyHost;
+  const featureAuthority = `${featurePunyHost}${port}`;
+  const normalized = `${scheme}://${featureAuthority}${path}${query}${fragment}`;
   if (normalized.length > MAX_URL_LENGTH) return emptyResult(raw, "url_too_long");
   const cacheQuery = stripTracking(query.replace(/^\?+/, ""));
   const cacheKey = `${scheme}://${authority}${path}${cacheQuery ? `?${cacheQuery}` : ""}`;
   const suffix = ip ? null : psl.publicSuffix(punyHost);
   const registrable = ip ? null : psl.registrableDomain(punyHost);
-  let decoded = normalized;
-  try { decoded = decodeURIComponent(normalized); } catch { /* preserve malformed escapes */ }
+  const decoded = safeUnquote(normalized);
   return {
     raw, error: null, normalized, cache_key: cacheKey, display_host: displayHost,
     puny_host: punyHost, registrable_domain: registrable, public_suffix: suffix,

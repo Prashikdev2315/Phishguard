@@ -164,6 +164,8 @@ def extract_features(
 
     parsed = urllib.parse.urlsplit(result.normalized)
     host = (result.puny_host or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
     path = result.path or ""
     query = result.query.lstrip("?")
     fragment = result.fragment.lstrip("#")

@@ -349,20 +349,31 @@ def normalize(raw: str) -> NormalizeResult:
 
     # ── N-06: resolve path ───────────────────────────────────────────────────
     resolved_path = _resolve_path(parsed.path)
+    # ── N-14: root path "/" is canonical empty ───────────────────────────────
+    if resolved_path == "/":
+        resolved_path = ""
 
     # ── Reconstruct query and fragment ────────────────────────────────────────
     query = ("?" + parsed.query) if parsed.query else ""
     fragment = ("#" + parsed.fragment) if parsed.fragment else ""
 
-    # ── Build normalized URL (N-08: features include fragment) ───────────────
+    # ── N-15: strip one leading "www." label from host for feature computation ─
+    if puny_host.startswith("www."):
+        feature_puny_host = puny_host[4:]
+    else:
+        feature_puny_host = puny_host
+    feature_netloc = feature_puny_host + port_part
+    display_netloc = puny_host + port_part
+
+    # ── Build normalized URL (N-08: features include fragment; N-15: features strip www.) ───
     normalized = urllib.parse.urlunparse((
-        scheme, new_netloc, resolved_path, "", parsed.query, parsed.fragment
+        scheme, feature_netloc, resolved_path, "", parsed.query, parsed.fragment
     ))
 
-    # ── Build cache key (N-08: drop fragment; N-09: strip tracking params) ───
+    # ── Build cache key (N-08: drop fragment; N-09: strip tracking params; N-15: keeps www.) ───
     stripped_query = _strip_tracking_params(parsed.query)
     cache_key = urllib.parse.urlunparse((
-        scheme, new_netloc, resolved_path, "", stripped_query, ""
+        scheme, display_netloc, resolved_path, "", stripped_query, ""
     ))
 
     # ── N-11: registrable domain via PSL ─────────────────────────────────────

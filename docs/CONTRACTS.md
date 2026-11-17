@@ -177,7 +177,7 @@ as a bundled zlib implementation for PGM1 payload inflation, and `punycode` is
 retained only for IDNA normalization; neither package is loaded as a bare
 runtime import by the unpacked extension.
 
-Frozen in Chunk 2. Source: PRD §6.1 (N-01 to N-13).
+Frozen in Chunk 2; amended for train/serve skew fix. Source: PRD §6.1 (N-01 to N-15).
 TypeScript port (Chunk 8) must produce identical outputs; verified by PAR-01.
 
 ### Return type: `NormalizeResult` fields
@@ -218,6 +218,8 @@ TypeScript port (Chunk 8) must produce identical outputs; verified by PAR-01.
 | N-11 | Registrable domain via pinned PSL (`lists/psl.dat`; fallback to minimal built-in). Private section included so `username.github.io` → `username.github.io`. |
 | N-12 | `len(url) > 2048` → error `url_too_long`. Checked on raw input AND on result. |
 | N-13 | All string-based features are computed on the scheme-stripped normalized URL (e.g. `example.com/path` instead of `http://example.com/path`). `is_https` dropped from model features in schema `fs1` (feature count = 50). R-10 (`NO_HTTPS`) continues to evaluate the real scheme at runtime. |
+| N-14 | A root path `"/"` is canonical empty (`https://host/` == `https://host`). |
+| N-15 | For feature computation strip one leading `"www."` label from the host (display and cache keys keep it). |
 
 ### PSL contract
 
@@ -234,4 +236,4 @@ TypeScript port (Chunk 8) must produce identical outputs; verified by PAR-01.
 
 ---
 
-*Last updated: Chunk 2 — normalize.py behavior notes added*
+*Last updated: Approved contract change — N-14 and N-15 added to address train/serve skew and source shortcuts.*

@@ -587,7 +587,7 @@ def run_benchmark(
     y_all = np.concatenate([y_train, y_test])
 
     all_results: List[dict] = []
-    best_bacc = -1.0
+    best_cv_bacc = -1.0
     best_combo: Optional[dict] = None
     best_pipe: Optional[Pipeline] = None
 
@@ -653,10 +653,20 @@ def run_benchmark(
             }
             all_results.append(result)
 
-            if g1_pass and ho_bacc > best_bacc:
-                best_bacc = ho_bacc
+            # CV-based selection among G-1-passing RF candidates (deployable to PGM1)
+            if clf_name == "rf" and g1_pass and cv_bacc > best_cv_bacc:
+                best_cv_bacc = cv_bacc
                 best_combo = result
                 best_pipe = trained_pipe
+
+    if best_pipe is None:
+        # Fallback to top RF model by CV balanced accuracy
+        rf_runs = [r for r in all_results if r.get("classifier") == "rf" and r.get("status") == "ok"]
+        if rf_runs:
+            best_combo = max(rf_runs, key=lambda r: r["cv"]["balanced_accuracy"]["mean"])
+            _, best_pipe = evaluate_holdout(
+                X_train, y_train, X_test, y_test, best_combo["selector"], "rf", seed=seed
+            )
 
     # ------------------------------------------------------------------
     # Persist best model

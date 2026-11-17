@@ -77,3 +77,18 @@ def test_grouped_holdout_has_no_domain_overlap():
     train, test = grouped_holdout(frame, seed=42)
     assert set(train["registrable_domain"]).isdisjoint(set(test["registrable_domain"]))
     assert len(train) + len(test) == len(frame)
+
+
+def test_domain_cap_a_benign_capped_at_5():
+    rows = []
+    for index in range(20):
+        rows.append({
+            "URL": f"https://example.com/page-{index}",
+            "type": "Benign",
+            "source": "A_benign",
+            "norm_url": f"http://example.com/page-{index}",
+            "registrable_domain": "example.com",
+        })
+    frame = pd.DataFrame(rows)
+    capped, _, _ = apply_domain_cap(frame, seed=42)
+    assert len(capped) == 5

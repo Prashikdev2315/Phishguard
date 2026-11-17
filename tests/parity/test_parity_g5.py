@@ -30,7 +30,7 @@ def test_typescript_parity_gate_builds_and_runs():
         Path(output.name).unlink(missing_ok=True)
 
     import pandas as pd
-    test_frame = pd.read_csv(ROOT / "data/splits/test.csv", dtype=str, keep_default_na=False)
+    test_frame = pd.read_csv(ROOT / "data/processed/D1_cleaned.csv", dtype=str, keep_default_na=False)
     oracle = _load_joblib(ROOT / "ml/models/best_model.joblib")
     python_vectors = np.asarray([extract_vector(url) for url in test_frame["URL"]], dtype=np.float64)
     raw_probabilities = oracle.predict_proba(python_vectors)[:, 1]
@@ -45,7 +45,7 @@ def test_typescript_parity_gate_builds_and_runs():
         np.asarray(calibration["y_thresholds"], dtype=float),
     )
     python_risks = np.rint(100.0 * python_probabilities).astype(int)
-    assert len(ts_rows) == len(test_frame) == 1896
+    assert len(ts_rows) == len(test_frame) == 8458
     max_feature_diff = 0.0
     max_risk_diff = 0
     normalization_mismatches = 0

@@ -18,6 +18,15 @@ describe("Chunk 8 TypeScript parity", () => {
     expect(normalize("https://user.github.io/account").registrable_domain).toBe("user.github.io");
     expect(normalize("https://192.168.1.1/login").is_ip_host).toBe(true);
     expect(normalize("https://example.com/a b").error).toBe("whitespace_inside");
+    // N-14: root path "/" is canonical empty
+    expect(normalize("https://example.com/").normalized).toBe("https://example.com");
+    expect(normalize("https://example.com/").path).toBe("");
+    expect(normalize("https://example.com/").cache_key).toBe("https://example.com");
+    // N-15: for feature computation strip one leading "www."
+    const wwwNorm = normalize("https://www.example.com/");
+    expect(wwwNorm.normalized).toBe("https://example.com");
+    expect(wwwNorm.display_host).toBe("www.example.com");
+    expect(wwwNorm.cache_key).toBe("https://www.example.com");
   });
 
   it("produces the frozen 50-feature vector", () => {

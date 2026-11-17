@@ -1,104 +1,104 @@
 {
   "Benign": {
-    "bare_homepage_rows": 6088,
-    "bare_homepage_share": 0.98671,
-    "rows": 6170,
+    "bare_homepage_rows": 4904,
+    "bare_homepage_share": 0.983554,
+    "rows": 4986,
     "top_20_domains": [
-      {
-        "count": 65,
-        "domain": "google.com"
-      },
-      {
-        "count": 65,
-        "domain": "apple.com"
-      },
-      {
-        "count": 65,
-        "domain": "com.akadns.net"
-      },
-      {
-        "count": 65,
-        "domain": "azure.com"
-      },
-      {
-        "count": 65,
-        "domain": "microsoft.com"
-      },
-      {
-        "count": 65,
-        "domain": "tiktokcdn.com"
-      },
-      {
-        "count": 58,
-        "domain": "office.com"
-      },
-      {
-        "count": 53,
-        "domain": "office.net"
-      },
-      {
-        "count": 42,
-        "domain": "tiktokv.com"
-      },
-      {
-        "count": 39,
-        "domain": "yahoo.com"
-      },
-      {
-        "count": 34,
-        "domain": "live.com"
-      },
-      {
-        "count": 29,
-        "domain": "facebook.com"
-      },
-      {
-        "count": 29,
-        "domain": "tiktokcdn-us.com"
-      },
-      {
-        "count": 25,
-        "domain": "aaplimg.com"
-      },
-      {
-        "count": 25,
-        "domain": "bytefcdn-oversea.com"
-      },
-      {
-        "count": 23,
-        "domain": "webex.com"
-      },
-      {
-        "count": 23,
-        "domain": "worldfcdn2.com"
-      },
       {
         "count": 22,
         "domain": "tmall.com"
       },
       {
-        "count": 22,
-        "domain": "msedge.net"
+        "count": 7,
+        "domain": "youtube.com"
       },
       {
-        "count": 21,
+        "count": 7,
+        "domain": "office.com"
+      },
+      {
+        "count": 7,
+        "domain": "amazon.com"
+      },
+      {
+        "count": 7,
+        "domain": "linkedin.com"
+      },
+      {
+        "count": 6,
+        "domain": "taboola.com"
+      },
+      {
+        "count": 6,
+        "domain": "microsoft.com"
+      },
+      {
+        "count": 6,
+        "domain": "samsung.com"
+      },
+      {
+        "count": 6,
+        "domain": "instagram.com"
+      },
+      {
+        "count": 6,
+        "domain": "cloudflare.com"
+      },
+      {
+        "count": 6,
+        "domain": "amazonaws.com"
+      },
+      {
+        "count": 6,
+        "domain": "fbcdn.net"
+      },
+      {
+        "count": 6,
+        "domain": "facebook.com"
+      },
+      {
+        "count": 6,
+        "domain": "msn.com"
+      },
+      {
+        "count": 6,
+        "domain": "outbrain.com"
+      },
+      {
+        "count": 6,
+        "domain": "live.com"
+      },
+      {
+        "count": 6,
+        "domain": "criteo.com"
+      },
+      {
+        "count": 6,
         "domain": "googleusercontent.com"
+      },
+      {
+        "count": 6,
+        "domain": "icloud.com"
+      },
+      {
+        "count": 6,
+        "domain": "grammarly.com"
       }
     ],
     "unique_registrable_domains": 3378
   },
   "Malicious": {
-    "bare_homepage_rows": 1160,
-    "bare_homepage_share": 0.330767,
-    "rows": 3507,
+    "bare_homepage_rows": 1150,
+    "bare_homepage_share": 0.331221,
+    "rows": 3472,
     "top_20_domains": [
       {
         "count": 50,
-        "domain": "google.com"
+        "domain": "000webhostapp.com"
       },
       {
         "count": 50,
-        "domain": "000webhostapp.com"
+        "domain": "google.com"
       },
       {
         "count": 50,
@@ -130,7 +130,7 @@
       },
       {
         "count": 13,
-        "domain": "arvixeshared.com"
+        "domain": "club-liner.de"
       },
       {
         "count": 13,
@@ -138,7 +138,7 @@
       },
       {
         "count": 13,
-        "domain": "club-liner.de"
+        "domain": "arvixeshared.com"
       },
       {
         "count": 12,
@@ -150,19 +150,7 @@
       },
       {
         "count": 11,
-        "domain": "vilargroup.by"
-      },
-      {
-        "count": 11,
-        "domain": "reported-account-unblocking.com"
-      },
-      {
-        "count": 11,
         "domain": "webnode.com"
-      },
-      {
-        "count": 11,
-        "domain": "esy.es"
       },
       {
         "count": 11,
@@ -170,7 +158,19 @@
       },
       {
         "count": 11,
+        "domain": "esy.es"
+      },
+      {
+        "count": 10,
         "domain": "brown-paper-packages-sa.com"
+      },
+      {
+        "count": 10,
+        "domain": "toptantriko.net"
+      },
+      {
+        "count": 10,
+        "domain": "gomezsimonebk.com"
       }
     ],
     "unique_registrable_domains": 2291

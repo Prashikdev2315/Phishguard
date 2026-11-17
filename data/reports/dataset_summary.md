@@ -3,21 +3,21 @@
 - Source: `Dataset.csv`
 - Source SHA-256: `429d6048d1e53b244789c5649914b340017687415ba11ad8897617fcc7eac38f`
 - Source rows: 11,000
-- Cleaned rows: 9,677
+- Cleaned rows: 8,458
 - Exact duplicates removed: 152
-- Normalized duplicates removed: 1
+- Normalized duplicates removed: 102
 - Rows without registrable domain: 123 (quarantined for review)
-- Grouped train/test: 7,781/1,896
+- Grouped train/test: 6,770/1,688
 - Grouped domain overlap: 0
-- D1 test-split registrable domains hash: `cbf6eadaadbda9093d97a623f695f8ee4f493927bdee39f131e23b091039328e` (1122 domains)
+- D1 test-split registrable domains hash: `9032ea0d2fbf9faf7a4b57f1b884fd5deadac88552c25f0eebd92d8ce961f3d0` (1132 domains)
 - E1 integration: disabled (--e1 not supplied)
 
 ## Class counts after cleaning
 
 | Class | Rows |
 |---|---:|
-| Benign | 6,170 |
-| Malicious | 3,507 |
+| Benign | 4,986 |
+| Malicious | 3,472 |
 
 ## Outstanding external sets
 

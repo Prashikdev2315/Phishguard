@@ -21,8 +21,10 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import os
 import pathlib
+import re
 import sys
 import warnings
 from datetime import datetime, timezone
@@ -106,12 +108,16 @@ def build_meta_flags(df: pd.DataFrame) -> pd.DataFrame:
 
     urls = df["URL"].tolist()
     has_path_flags, scheme_less_flags, on_hosting_flags, bare_home_flags = [], [], [], []
+    has_query_flags, login_flags, google_hosted_flags = [], [], []
+
+    LOGIN_PAT = re.compile(r"login|signin|sign-in|log-in|verify|account|password|auth|secure", re.I)
 
     for url in urls:
         r = normalize(url)
         # has_path: normalized path is non-empty and not just "/"
         path = r.path.strip("/") if r.path else ""
         has_path_flags.append(bool(path))
+        has_query_flags.append(bool(r.query))
 
         # scheme-less: original URL had no scheme (normalize prepended http://)
         raw = url.strip()
@@ -119,46 +125,164 @@ def build_meta_flags(df: pd.DataFrame) -> pd.DataFrame:
 
         # on hosting platform: registrable domain suffix matches a known platform
         reg = r.registrable_domain or ""
-        on_host = any(reg == p or reg.endswith("." + p) or p in (r.puny_host or "") for p in hosting_set)
+        host = (r.puny_host or "").lower()
+        on_host = any(reg == p or reg.endswith("." + p) or p in host for p in hosting_set)
         on_hosting_flags.append(on_host)
 
         # bare homepage: no path and no query
         bare = (not path) and (not r.query)
         bare_home_flags.append(bare)
 
+        # login-like keywords
+        login_flags.append(bool(LOGIN_PAT.search(r.decoded_url)))
+
+        # google-hosted
+        google_hosted = (reg == "google.com" or "google.com" in host or reg in ("1e100.net", "appspot.com", "googleusercontent.com"))
+        google_hosted_flags.append(google_hosted)
+
     meta = df.copy()
     meta["_has_path"] = has_path_flags
+    meta["_has_query"] = has_query_flags
     meta["_scheme_less"] = scheme_less_flags
     meta["_on_hosting"] = on_hosting_flags
     meta["_bare_home"] = bare_home_flags
+    meta["_login_keywords"] = login_flags
+    meta["_google_hosted"] = google_hosted_flags
     return meta
 
 
 # ---------------------------------------------------------------------------
-# Slice metric helper
+# Slice metric helper with Wilson 95% confidence intervals
 # ---------------------------------------------------------------------------
+
+def wilson_interval(successes: int, total: int, z: float = 1.959963984540054) -> Tuple[float, float]:
+    """95% Wilson score confidence interval for a binomial proportion."""
+    if total <= 0:
+        return 0.0, 0.0
+    p = successes / total
+    denominator = 1 + z**2 / total
+    centre = (p + z**2 / (2 * total)) / denominator
+    half_width = z * math.sqrt((p * (1 - p) + z**2 / (4 * total)) / total) / denominator
+    return max(0.0, centre - half_width), min(1.0, centre + half_width)
+
 
 def slice_metrics(
     y_true: np.ndarray, y_pred: np.ndarray, mask: np.ndarray, label: str
 ) -> dict:
-    """Compute recall, FPR and counts for a boolean mask over y_true/y_pred."""
+    """Compute recall, FPR, counts, and 95% Wilson intervals for a boolean mask over y_true/y_pred."""
     y_t = y_true[mask]
     y_p = y_pred[mask]
     if len(y_t) == 0:
-        return {"slice": label, "n": 0, "recall": None, "fpr": None,
-                "n_positive": 0, "n_negative": 0}
+        return {
+            "slice": label, "n": 0, "recall": None, "fpr": None,
+            "n_positive": 0, "n_negative": 0,
+            "recall_wilson_95_ci": None, "recall_wilson_ci_str": "N/A",
+            "fpr_wilson_95_ci": None, "fpr_wilson_ci_str": "N/A",
+        }
     pos = int((y_t == 1).sum())
     neg = int((y_t == 0).sum())
-    recall = float(recall_score(y_t, y_p, zero_division=0)) if pos > 0 else None
+    tp = int(((y_p == 1) & (y_t == 1)).sum())
     fp = int(((y_p == 1) & (y_t == 0)).sum())
-    fpr = float(fp / neg) if neg > 0 else None
+
+    if pos > 0:
+        recall = float(tp / pos)
+        rec_ci_low, rec_ci_high = wilson_interval(tp, pos)
+        rec_ci = [round(rec_ci_low, 6), round(rec_ci_high, 6)]
+        rec_str = f"[{rec_ci_low * 100:.2f}%, {rec_ci_high * 100:.2f}%]"
+    else:
+        recall = None
+        rec_ci = None
+        rec_str = "N/A"
+
+    if neg > 0:
+        fpr = float(fp / neg)
+        fpr_ci_low, fpr_ci_high = wilson_interval(fp, neg)
+        fpr_ci = [round(fpr_ci_low, 6), round(fpr_ci_high, 6)]
+        fpr_str = f"[{fpr_ci_low * 100:.2f}%, {fpr_ci_high * 100:.2f}%]"
+    else:
+        fpr = None
+        fpr_ci = None
+        fpr_str = "N/A"
+
     return {
         "slice": label,
         "n": int(len(y_t)),
         "n_positive": pos,
         "n_negative": neg,
         "recall": round(recall, 6) if recall is not None else None,
+        "recall_wilson_95_ci": rec_ci,
+        "recall_wilson_ci_str": rec_str,
         "fpr": round(fpr, 6) if fpr is not None else None,
+        "fpr_wilson_95_ci": fpr_ci,
+        "fpr_wilson_ci_str": fpr_str,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Cross-source tests
+# ---------------------------------------------------------------------------
+
+def run_cross_source_tests(df_cleaned: pd.DataFrame) -> dict:
+    """Cross-source generalization tests: train on A, test on B, and the reverse."""
+    LOGGER.info("Running cross-source tests (A <-> B) ...")
+    from ml.train import build_pipeline
+    from sklearn.metrics import balanced_accuracy_score, recall_score
+
+    mask_a = df_cleaned["source"].isin(["A_benign", "A_mal"])
+    mask_b = df_cleaned["source"].isin(["B_benign", "B_mal"])
+
+    df_a = df_cleaned[mask_a].copy()
+    df_b = df_cleaned[mask_b].copy()
+
+    X_a = np.asarray([extract_vector(u) for u in df_a["URL"]], dtype=np.float64)
+    y_a = np.asarray([LABEL_MAP[t] for t in df_a["type"]], dtype=np.int32)
+
+    X_b = np.asarray([extract_vector(u) for u in df_b["URL"]], dtype=np.float64)
+    y_b = np.asarray([LABEL_MAP[t] for t in df_b["type"]], dtype=np.int32)
+
+    # Train on A, test on B
+    pipe_a = build_pipeline("rf_importance", "rf", TOP_K, 42)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        pipe_a.fit(X_a, y_a)
+    y_pred_b = pipe_a.predict(X_b)
+    bacc_b = float(balanced_accuracy_score(y_b, y_pred_b))
+    rec_b = float(recall_score(y_b, y_pred_b, zero_division=0))
+    fp_b = int(((y_pred_b == 1) & (y_b == 0)).sum())
+    neg_b = int((y_b == 0).sum())
+    fpr_b = float(fp_b / neg_b) if neg_b > 0 else 0.0
+
+    # Train on B, test on A
+    pipe_b = build_pipeline("rf_importance", "rf", TOP_K, 42)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        pipe_b.fit(X_b, y_b)
+    y_pred_a = pipe_b.predict(X_a)
+    bacc_a = float(balanced_accuracy_score(y_a, y_pred_a))
+    rec_a = float(recall_score(y_a, y_pred_a, zero_division=0))
+    fp_a = int(((y_pred_a == 1) & (y_a == 0)).sum())
+    neg_a = int((y_a == 0).sum())
+    fpr_a = float(fp_a / neg_a) if neg_a > 0 else 0.0
+
+    return {
+        "train_A_test_B": {
+            "train_source": "Source A (A_benign + A_mal)",
+            "test_source": "Source B (B_benign + B_mal)",
+            "n_train": int(len(df_a)),
+            "n_test": int(len(df_b)),
+            "balanced_accuracy": round(bacc_b, 6),
+            "recall": round(rec_b, 6),
+            "fpr": round(fpr_b, 6),
+        },
+        "train_B_test_A": {
+            "train_source": "Source B (B_benign + B_mal)",
+            "test_source": "Source A (A_benign + A_mal)",
+            "n_train": int(len(df_b)),
+            "n_test": int(len(df_a)),
+            "balanced_accuracy": round(bacc_a, 6),
+            "recall": round(rec_a, 6),
+            "fpr": round(fpr_a, 6),
+        },
     }
 
 
@@ -455,17 +579,42 @@ def run_analysis(root: pathlib.Path) -> dict:
         # Missed malicious = false negatives
         fn_mask = (y_test == 1) & (y_pred == 0)
 
+        has_path_mask      = meta["_has_path"].values.astype(bool)
+        has_query_mask     = meta["_has_query"].values.astype(bool)
+        scheme_less_mask   = meta["_scheme_less"].values.astype(bool)
+        on_hosting_mask    = meta["_on_hosting"].values.astype(bool)
+        bare_home_mask     = meta["_bare_home"].values.astype(bool)
+        login_mask         = meta["_login_keywords"].values.astype(bool)
+        google_hosted_mask = meta["_google_hosted"].values.astype(bool)
+
         slices = [
+            # has_query
+            slice_metrics(y_test, y_pred, has_query_mask,          "has_query=True"),
+            slice_metrics(y_test, y_pred, ~has_query_mask,         "has_query=False"),
             # has_path
-            slice_metrics(y_test, y_pred, has_path_mask,          "has_path=True"),
-            slice_metrics(y_test, y_pred, ~has_path_mask,         "has_path=False"),
-            # hosting platform
-            slice_metrics(y_test, y_pred, on_hosting_mask,        "on_hosting_platform=True"),
-            slice_metrics(y_test, y_pred, ~on_hosting_mask,       "on_hosting_platform=False"),
-            # scheme-less vs scheme-ful
-            slice_metrics(y_test, y_pred, scheme_less_mask,       "scheme_less=True"),
-            slice_metrics(y_test, y_pred, ~scheme_less_mask,      "scheme_less=False"),
+            slice_metrics(y_test, y_pred, has_path_mask,           "has_path=True"),
+            slice_metrics(y_test, y_pred, ~has_path_mask,          "has_path=False"),
+            # login-like keywords
+            slice_metrics(y_test, y_pred, login_mask,              "login_keywords=True"),
+            slice_metrics(y_test, y_pred, ~login_mask,             "login_keywords=False"),
+            # google-hosted
+            slice_metrics(y_test, y_pred, google_hosted_mask,      "google_hosted=True"),
+            slice_metrics(y_test, y_pred, ~google_hosted_mask,     "google_hosted=False"),
         ]
+
+        if "source" in meta.columns:
+            for src_val in sorted(meta["source"].unique()):
+                src_mask = (meta["source"] == src_val).values.astype(bool)
+                slices.append(slice_metrics(y_test, y_pred, src_mask, f"source={src_val}"))
+
+        slices.extend([
+            # hosting platform
+            slice_metrics(y_test, y_pred, on_hosting_mask,         "on_hosting_platform=True"),
+            slice_metrics(y_test, y_pred, ~on_hosting_mask,        "on_hosting_platform=False"),
+            # scheme-less vs scheme-ful
+            slice_metrics(y_test, y_pred, scheme_less_mask,        "scheme_less=True"),
+            slice_metrics(y_test, y_pred, ~scheme_less_mask,       "scheme_less=False"),
+        ])
 
         # Share of missed malicious that are bare homepages
         fn_total = int(fn_mask.sum())
@@ -497,6 +646,14 @@ def run_analysis(root: pathlib.Path) -> dict:
         hgb_result["holdout_balanced_accuracy"] - benchmark["shortcut_baseline_balanced_acc"], 6
     )
 
+    # ---- 4b. Cross-source tests (Requirement 5) -------------------------------
+    cleaned_path = proc_dir / "D1_cleaned.csv"
+    cross_source_results = None
+    if cleaned_path.exists():
+        df_cleaned = pd.read_csv(cleaned_path, dtype=str, keep_default_na=False)
+        if "source" in df_cleaned.columns:
+            cross_source_results = run_cross_source_tests(df_cleaned)
+
     # ---- 5. Assemble output --------------------------------------------------
     analysis = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -504,6 +661,7 @@ def run_analysis(root: pathlib.Path) -> dict:
         "shortcut_baseline_balanced_acc": benchmark["shortcut_baseline_balanced_acc"],
         "gate_scorecard": scorecard,
         "finalist_selection": selection_method,
+        "cross_source_tests": cross_source_results,
         "error_analysis": error_analysis,
         "e1_evaluation": e1_report,
         "hgb_reference_baseline": hgb_result,
@@ -590,6 +748,21 @@ def _write_markdown(a: dict, path: pathlib.Path) -> None:
             f"| {f['g4_gap']*100:.2f} pp |"
         )
 
+    if a.get("cross_source_tests"):
+        cst = a["cross_source_tests"]
+        lines += [
+            "",
+            "---",
+            "",
+            "## 2b. Cross-Source Generalization Tests",
+            "",
+            "| Direction | Train Set | Test Set | Bal Acc | Recall | FPR |",
+            "|-----------|----------:|---------:|--------:|-------:|----:|",
+            f"| A -> B | {cst['train_A_test_B']['n_train']} | {cst['train_A_test_B']['n_test']} | {cst['train_A_test_B']['balanced_accuracy']:.4f} | {cst['train_A_test_B']['recall']:.4f} | {cst['train_A_test_B']['fpr']:.4f} |",
+            f"| B -> A | {cst['train_B_test_A']['n_train']} | {cst['train_B_test_A']['n_test']} | {cst['train_B_test_A']['balanced_accuracy']:.4f} | {cst['train_B_test_A']['recall']:.4f} | {cst['train_B_test_A']['fpr']:.4f} |",
+            "",
+        ]
+
     lines += [
         "",
         "---",
@@ -618,12 +791,12 @@ def _write_markdown(a: dict, path: pathlib.Path) -> None:
             "",
             "#### Recall and FPR by slice",
             "",
-            "| Slice | n | n_malicious | n_benign | Recall | FPR |",
-            "|-------|--:|------------:|---------:|-------:|----:|",
+            "| Slice | n | n_malicious | n_benign | Recall (95% CI) | FPR (95% CI) |",
+            "|-------|--:|------------:|---------:|----------------:|-------------:|",
         ]
         for sl in ea["slices"]:
-            rec = f"{sl['recall']:.4f}" if sl["recall"] is not None else "—"
-            fpr = f"{sl['fpr']:.4f}" if sl["fpr"] is not None else "—"
+            rec = f"{sl['recall']:.4f} ({sl['recall_wilson_ci_str']})" if sl["recall"] is not None else "—"
+            fpr = f"{sl['fpr']:.4f} ({sl['fpr_wilson_ci_str']})" if sl["fpr"] is not None else "—"
             lines.append(
                 f"| {sl['slice']} | {sl['n']} | {sl['n_positive']} | {sl['n_negative']} "
                 f"| {rec} | {fpr} |"

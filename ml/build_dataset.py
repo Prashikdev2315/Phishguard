@@ -61,12 +61,28 @@ def sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def assign_source(index: int) -> str:
+    if 0 <= index < 4000:
+        return "A_benign"
+    elif 4000 <= index < 6000:
+        return "A_mal"
+    elif 6000 <= index < 8500:
+        return "B_benign"
+    elif 8500 <= index < 11000:
+        return "B_mal"
+    return "unknown"
+
+
 def load_source(path: pathlib.Path) -> pd.DataFrame:
     frame = pd.read_csv(path, dtype=str, keep_default_na=False)
     missing = [column for column in REQUIRED_COLUMNS if column not in frame.columns]
     if missing:
         raise ValueError("Missing required CSV column(s): " + ", ".join(missing))
-    frame = frame.loc[:, list(REQUIRED_COLUMNS)].copy()
+    cols = list(REQUIRED_COLUMNS)
+    has_source = "source" in frame.columns
+    if has_source:
+        cols.append("source")
+    frame = frame.loc[:, cols].copy()
     frame["URL"] = frame["URL"].astype(str).str.strip()
     frame["type"] = frame["type"].astype(str).str.strip()
     if (frame["URL"] == "").any():
@@ -76,6 +92,10 @@ def load_source(path: pathlib.Path) -> pd.DataFrame:
         raise ValueError(f"Unexpected labels {unexpected}; expected only {list(LABELS)}.")
     if frame["type"].eq("").any():
         raise ValueError("Source contains empty labels.")
+    if has_source:
+        frame["source"] = frame["source"].astype(str).str.strip()
+    else:
+        frame["source"] = [assign_source(i) for i in range(len(frame))]
     return frame
 
 
@@ -125,7 +145,10 @@ def deduplicate(frame: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int], pd.D
 
 
 def apply_domain_cap(frame: pd.DataFrame, seed: int = SEED) -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, dict]]:
-    """Apply max(50, ceil(1% of class rows)) per registrable domain and class.
+    """Apply domain cap:
+    - For A_benign: cap at 5 per registrable domain
+    - For other Benign: cap at 50 per registrable domain
+    - For Malicious: cap at 50 per registrable domain
 
     Rows without a registrable domain are excluded to a separate review file,
     not grouped under a fabricated shared key.
@@ -135,33 +158,126 @@ def apply_domain_cap(frame: pd.DataFrame, seed: int = SEED) -> Tuple[pd.DataFram
     kept_parts: List[pd.DataFrame] = []
     details: Dict[str, dict] = {}
 
+    has_source = "source" in valid.columns
+
     for label in LABELS:
         subset = valid[valid["type"] == label].copy()
-        cap = max(50, int(math.ceil(0.01 * len(subset))))
-        # Stable hash ordering avoids source-order preference and is reproducible.
-        subset["_selection_hash"] = subset["norm_url"].map(
-            lambda value: sha256_text(f"{seed}|{label}|{value}")
-        )
-        subset = subset.sort_values(
-            ["registrable_domain", "_selection_hash"], kind="mergesort"
-        )
-        subset["_domain_rank"] = subset.groupby("registrable_domain").cumcount() + 1
-        kept = subset[subset["_domain_rank"] <= cap].copy()
-        dropped = subset[subset["_domain_rank"] > cap].copy()
-        details[label] = {
-            "rows_before_cap": int(len(frame[frame["type"] == label])),
-            "rows_with_domain": int(len(subset)),
-            "cap_per_domain": int(cap),
-            "domains": int(subset["registrable_domain"].nunique()),
-            "domains_over_cap": int((subset.groupby("registrable_domain").size() > cap).sum()),
-            "rows_dropped_by_cap": int(len(dropped)),
-            "rows_without_domain": int((frame["type"] == label).sum() - len(subset)),
-            "rows_after_cap": int(len(kept)),
-        }
-        kept_parts.append(kept.drop(columns=["_selection_hash", "_domain_rank"]))
+        if label == "Benign" and has_source and (subset["source"] == "A_benign").any():
+            a_sub = subset[subset["source"] == "A_benign"].copy()
+            other_sub = subset[subset["source"] != "A_benign"].copy()
+
+            a_sub["_selection_hash"] = a_sub["norm_url"].map(
+                lambda value: sha256_text(f"{seed}|A_benign|{value}")
+            )
+            a_sub = a_sub.sort_values(["registrable_domain", "_selection_hash"], kind="mergesort")
+            a_sub["_domain_rank"] = a_sub.groupby("registrable_domain").cumcount() + 1
+            kept_a = a_sub[a_sub["_domain_rank"] <= 5].copy()
+            dropped_a = a_sub[a_sub["_domain_rank"] > 5].copy()
+
+            cap_other = 50
+            other_sub["_selection_hash"] = other_sub["norm_url"].map(
+                lambda value: sha256_text(f"{seed}|Benign_other|{value}")
+            )
+            other_sub = other_sub.sort_values(["registrable_domain", "_selection_hash"], kind="mergesort")
+            other_sub["_domain_rank"] = other_sub.groupby("registrable_domain").cumcount() + 1
+            kept_other = other_sub[other_sub["_domain_rank"] <= cap_other].copy()
+            dropped_other = other_sub[other_sub["_domain_rank"] > cap_other].copy()
+
+            kept = pd.concat([kept_a, kept_other], ignore_index=True)
+            dropped = pd.concat([dropped_a, dropped_other], ignore_index=True)
+
+            details[label] = {
+                "rows_before_cap": int(len(frame[frame["type"] == label])),
+                "rows_with_domain": int(len(subset)),
+                "cap_per_domain": 5,
+                "domains": int(subset["registrable_domain"].nunique()),
+                "domains_over_cap": int((a_sub.groupby("registrable_domain").size() > 5).sum() +
+                                        (other_sub.groupby("registrable_domain").size() > cap_other).sum()),
+                "rows_dropped_by_cap": int(len(dropped)),
+                "rows_without_domain": int((frame["type"] == label).sum() - len(subset)),
+                "rows_after_cap": int(len(kept)),
+            }
+            kept_parts.append(kept.drop(columns=["_selection_hash", "_domain_rank"]))
+        else:
+            cap = 50
+            subset["_selection_hash"] = subset["norm_url"].map(
+                lambda value: sha256_text(f"{seed}|{label}|{value}")
+            )
+            subset = subset.sort_values(
+                ["registrable_domain", "_selection_hash"], kind="mergesort"
+            )
+            subset["_domain_rank"] = subset.groupby("registrable_domain").cumcount() + 1
+            kept = subset[subset["_domain_rank"] <= cap].copy()
+            dropped = subset[subset["_domain_rank"] > cap].copy()
+            details[label] = {
+                "rows_before_cap": int(len(frame[frame["type"] == label])),
+                "rows_with_domain": int(len(subset)),
+                "cap_per_domain": int(cap),
+                "domains": int(subset["registrable_domain"].nunique()),
+                "domains_over_cap": int((subset.groupby("registrable_domain").size() > cap).sum()),
+                "rows_dropped_by_cap": int(len(dropped)),
+                "rows_without_domain": int((frame["type"] == label).sum() - len(subset)),
+                "rows_after_cap": int(len(kept)),
+            }
+            kept_parts.append(kept.drop(columns=["_selection_hash", "_domain_rank"]))
     capped = pd.concat(kept_parts, ignore_index=True)
     capped = capped.sort_values(["type", "registrable_domain", "norm_url"], kind="mergesort").reset_index(drop=True)
     return capped, no_domain, details
+
+
+def generate_benign_audit(
+    capped: pd.DataFrame,
+    audit_path: pathlib.Path,
+    seed: int = SEED,
+) -> pd.DataFrame:
+    """Write data/audit/benign_suspect.csv for manual review. Do not auto-remove them.
+
+    Flags benign rows with:
+    - high host entropy (>= 4.0)
+    - cross-validated malicious probability above 0.9 (via 5-fold StratifiedGroupKFold RF)
+    """
+    from ml.features import extract_vector, _entropy
+    from sklearn.ensemble import RandomForestClassifier
+
+    audit_path.parent.mkdir(parents=True, exist_ok=True)
+    X = np.asarray([extract_vector(u) for u in capped["URL"]], dtype=np.float64)
+    y = np.asarray([0 if t == "Benign" else 1 for t in capped["type"]], dtype=np.int32)
+    groups = capped["registrable_domain"].to_numpy()
+
+    sgkf = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=seed)
+    oof_probs = np.zeros(len(capped), dtype=np.float64)
+    for train_idx, val_idx in sgkf.split(X, y, groups):
+        clf = RandomForestClassifier(
+            n_estimators=100, class_weight="balanced", random_state=seed, n_jobs=-1
+        )
+        clf.fit(X[train_idx], y[train_idx])
+        oof_probs[val_idx] = clf.predict_proba(X[val_idx])[:, 1]
+
+    host_entropies = np.asarray([_entropy(normalize(u).puny_host) for u in capped["URL"]], dtype=np.float64)
+
+    benign_mask = (y == 0)
+    suspect_entropy = (host_entropies >= 4.0)
+    suspect_prob = (oof_probs > 0.9)
+    suspect_mask = benign_mask & (suspect_entropy | suspect_prob)
+
+    suspect_df = capped[suspect_mask].copy()
+    suspect_df["host_entropy"] = np.round(host_entropies[suspect_mask], 4)
+    suspect_df["cv_malicious_prob"] = np.round(oof_probs[suspect_mask], 4)
+
+    reasons = []
+    for he, prob in zip(suspect_df["host_entropy"], suspect_df["cv_malicious_prob"]):
+        r = []
+        if he >= 4.0:
+            r.append("high_host_entropy")
+        if prob > 0.9:
+            r.append("high_cv_malicious_prob")
+        reasons.append(";".join(r))
+    suspect_df["suspect_reason"] = reasons
+
+    cols = ["URL", "type", "source", "registrable_domain", "norm_url", "host_entropy", "cv_malicious_prob", "suspect_reason"]
+    available_cols = [c for c in cols if c in suspect_df.columns]
+    suspect_df[available_cols].to_csv(audit_path, index=False)
+    return suspect_df
 
 
 def concentration_report(frame: pd.DataFrame) -> dict:
@@ -407,6 +523,10 @@ def build(source: pathlib.Path, root: pathlib.Path, seed: int = SEED, e1_path: O
     no_domain_path = reports_dir / "D1_without_registrable_domain.csv"
     no_domain.to_csv(no_domain_path, index=False)
 
+    # Benign audit report for manual review (PRD/Fix Requirement 4: do not auto-remove)
+    audit_path = data_dir / "audit" / "benign_suspect.csv"
+    generate_benign_audit(capped, audit_path, seed=seed)
+
     # Human label review sample, 100 per class (or all rows if fewer).
     review_parts = []
     for label in LABELS:
@@ -467,13 +587,17 @@ def build(source: pathlib.Path, root: pathlib.Path, seed: int = SEED, e1_path: O
 
     grouped_overlap = sorted(set(grouped_train["registrable_domain"]) & set(grouped_test["registrable_domain"]))
     random_overlap = sorted(set(random_train["registrable_domain"]) & set(random_test["registrable_domain"]))
-    cap_group_counts = capped.groupby(["type", "registrable_domain"]).size()
-    cap_violations = int((cap_group_counts > cap_stats[LABELS[0]]["cap_per_domain"]).sum())
-    # Validate each class against its own cap.
-    cap_violations = sum(
-        int((capped[capped["type"] == label].groupby("registrable_domain").size() > cap_stats[label]["cap_per_domain"]).sum())
-        for label in LABELS
-    )
+    if "source" in capped.columns and (capped["source"] == "A_benign").any():
+        cap_violations = int(
+            (capped[capped["source"] == "A_benign"].groupby("registrable_domain").size() > 5).sum() +
+            (capped[(capped["type"] == "Benign") & (capped["source"] != "A_benign")].groupby("registrable_domain").size() > 50).sum() +
+            (capped[capped["type"] == "Malicious"].groupby("registrable_domain").size() > 50).sum()
+        )
+    else:
+        cap_violations = sum(
+            int((capped[capped["type"] == label].groupby("registrable_domain").size() > cap_stats[label]["cap_per_domain"]).sum())
+            for label in LABELS
+        )
 
     cleaning_report = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),

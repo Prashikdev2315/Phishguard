@@ -35,6 +35,7 @@ def _load_joblib(path: pathlib.Path):
     import ml.train as train_module
 
     setattr(sys.modules["__main__"], "_RFImportanceSelector", train_module._RFImportanceSelector)
+    setattr(sys.modules["__main__"], "_L1Selector", train_module._L1Selector)
     model = joblib.load(path)
     classifier = model.named_steps.get("classifier")
     for estimator in getattr(classifier, "estimators_", ()):
@@ -143,19 +144,20 @@ def _header_and_payload(model, root: pathlib.Path, model_path: pathlib.Path) -> 
     payload = b"".join((scaler_min, scaler_scale, selected, forest))
     compressed = zlib.compress(payload, level=9)
     thresholds = json.loads((root / "thresholds.json").read_text(encoding="utf-8"))
+    calibration_meta = _calibration_metadata(root, manifest, model)
     header = {
         "schema": "fs1",
         "model_version": MODEL_VERSION,
         "feature_count": 50,
-        "sample_count": 7781,
+        "sample_count": int(calibration_meta["sample_count"]),
         "k": 20,
-        "selector": "rf_importance",
-        "classifier": "rf",
+        "selector": manifest.get("selector", "rf_importance"),
+        "classifier": manifest.get("classifier", "rf"),
         "compression": "zlib",
         "payload_uncompressed_bytes": len(payload),
         "payload_compressed_bytes": len(compressed),
         "sections": sections,
-        "calibration": _calibration_metadata(root, manifest, model),
+        "calibration": calibration_meta,
         "thresholds": {
             "T_block": thresholds["T_block"],
             "T_warn": thresholds["T_warn"],
