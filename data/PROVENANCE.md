@@ -58,68 +58,35 @@ All numbers computed by `ml/profile.py`. See `ml/report/profile_D1.json` and
 ---
 
 
-## E1 â€” Benign deep-link candidate set (Chunk 3)
+## E1 — Benign deep-link candidate set (Chunk E)
 
-**Structural validation: PASS.** Independent benign-label verification and source-term review remain pending.
+**Status: IN PROGRESS — Tranco external list validated; dry-run executed; awaiting user approval for full crawl.**
 
 | Field | Value |
 |-------|-------|
-| Source | Tranco `top-1m.csv`; inner-page URLs obtained from public sitemaps |
-| Tranco file | `data/raw/E1/tranco/top-1m.csv` |
-| Local file modification time | 2026-11-15 19:45:22 (local time; not proof of snapshot date) |
-| Tranco snapshot ID / download URL | Unknown ? metadata unavailable. |
-| Collection method | Sitemap-based URL discovery; robots.txt permissions checked |
-| D1 exclusion | All 5,644 D1 registrable domains excluded |
-| Old/new candidate domain overlap | 0 |
-| URLs accepted | 2,591 |
-| Registrable domains | 866 |
-| Training URLs / domains | 1,296 / 433 |
-| Holdout URLs / domains | 1,295 / 433 |
-| Train/holdout domain overlap | 0 |
-| D1/E1 domain overlap | 0 |
-| Maximum URLs per domain | 3 |
-| Rejected URLs | 0 |
-| Split rule | SHA-256 of `phishguard-e1-v1|domain`, ranked midpoint |
-| Built by | TODO â€” record responsible team member |
-| Built on | 2026-11-16 |
-| Source terms / permissions reviewed? | PARTIAL ? robots.txt rules checked; Tranco upstream licences and individual site terms not fully verified. Redistribution not approved. |
-| Benign-label verification | Preliminary 100-URL audit: 41 supported candidates, 53 uncertain, 6 flagged; full verification pending. |
-| Input SHA-256 | `18a66bd7182af50731ff38252261f4862daf635b4101ff41d5e319074e0c4576` |
-| Training SHA-256 | `0894fbe621ee8705345e40faf86c8d3c419d36ed2fa2da70d5fdb182fdce690c` |
-| Holdout SHA-256 | `737f78c2b01c0b41a073955958379dead53a90353c85ee01831629e0cb026548` |
-| Report SHA-256 | `1a427b134c958825d16e439ddee8e8a20eff429eac4c6f30da323e26d764a09c` |
-| Structural builder status | PASS |
+| Source | Tranco Top 1M (`data/external/tranco.csv`) |
+| List ID | `unknown, will add` |
+| Download date | 2026-11-17 |
+| Row count | 1,000,000 domains (ranks 1 to 1,000,000, no header) |
+| SHA-256 | `7b6e83d59c444a722f8868a4aa83768fa1cca9f8b5a0cc20fbee085c2bad4d6f` |
+| Collection targets | ≥ 5,000 benign URLs from ≥ 1,500 domains, ≤ 5 URLs/domain |
+| Rank bands | 1-1k, 1k-10k, 10k-100k, 100k-1M |
+| Quotas | Path ≥ 50%, Query ≥ 20%, Login/Account ≥ 10%, Indian sites/lang ≥ 10% |
+| Discovery methods | Sitemaps, homepage links, 1-level links, 26 curated seed domains |
+| Crawl constraints | Respect robots.txt, 1 req/sec/host, public pages only |
+| D1 exclusion | All 5,669 D1 registrable domains strictly excluded (0 overlap) |
+| Adult domain exclusion | Domains with adult TLDs (.xxx, .adult, .porn, .sex) or adult industry/escort keywords are excluded; stratified sampling resamples replacement domains from the exact same rank band. **Known bias:** E1 has intentional zero coverage of adult/escort web properties. |
 
 ---
 
-### E1 sample evidence review
+## E2 — Fresh phishing set (Chunk E)
 
-A preliminary public-web evidence review was performed on 100 sampled URLs.
+**Status: MISSING — Not provided yet.**
+- As instructed, no synthetic, fabricated, or substitute data has been created.
+- `build_dataset.py`, `evaluate.py`, and `evaluate_e1.py` support the E2-optional path.
+- When E2 is absent, the E2 temporal split, `e2_holdout`, and the E2 half of gate G-2 are explicitly reported as `"not measurable (E2 missing)"`, never as pass or fail.
 
-| Result | Count |
-|---|---:|
-| Supported benign candidates | 41 |
-| Uncertain | 53 |
-| Flagged ? exclude pending further review | 6 |
-| Total sampled | 100 |
-
-This is not a security-reputation clearance or verification of all E1 URLs.
-Uncertain and flagged records must not be treated as confirmed benign.
-Full source-term and benign-label verification remains pending.
-
-## E2 â€” Fresh phishing set (Chunk 3)
-
-**Status: BLOCKED** ? D1 collection date is unknown; temporal ordering cannot be established.
-
-| Field | Value |
-|-------|-------|
-| Source | PhishTank or OpenPhish, collected AFTER D1 collection date |
-| Target size | â‰¥ 500 verified phishing URLs |
-| Domains | None overlapping with D1 |
-| Feed terms checked? | TODO |
-| Built by | TODO |
-| Built on | TODO |
-| SHA-256 | TODO |
+---
 
 ---
 

@@ -1,0 +1,187 @@
+{
+  "generated_at_utc": "2026-11-17T10:56:30.158217+00:00",
+  "tranco_path": "data\\external\\tranco.csv",
+  "tranco_list_id": null,
+  "tranco_list_date": null,
+  "seed": 42,
+  "band_sizes": [
+    8,
+    8,
+    8,
+    8
+  ],
+  "max_domains_option": 25,
+  "domains_sampled": 25,
+  "domains_attempted": 25,
+  "domains_succeeded": 10,
+  "domains_blocked_robots": 11,
+  "domains_failed_fetch": 2,
+  "domains_skipped_d1": 5,
+  "domains_no_links": 1,
+  "total_urls_collected": 40,
+  "urls_by_source": {
+    "homepage_link": 14,
+    "sitemap": 9,
+    "login_page": 3,
+    "one_level_link": 2,
+    "seed_list": 12
+  },
+  "urls_per_domain_distribution": {
+    "0": 41,
+    "1": 0,
+    "2": 0,
+    "3": 5,
+    "4": 0,
+    "5+": 5
+  },
+  "urls_per_domain": [
+    {
+      "domain": "incometax.gov.in",
+      "rank": 0,
+      "count": 3,
+      "sources": [
+        "seed_list",
+        "seed_list",
+        "seed_list"
+      ]
+    },
+    {
+      "domain": "sbi.co.in",
+      "rank": 0,
+      "count": 3,
+      "sources": [
+        "seed_list",
+        "seed_list",
+        "seed_list"
+      ]
+    },
+    {
+      "domain": "swiggy.com",
+      "rank": 0,
+      "count": 3,
+      "sources": [
+        "seed_list",
+        "seed_list",
+        "seed_list"
+      ]
+    },
+    {
+      "domain": "x.com",
+      "rank": 0,
+      "count": 3,
+      "sources": [
+        "seed_list",
+        "seed_list",
+        "seed_list"
+      ]
+    },
+    {
+      "domain": "jotform.com",
+      "rank": 655,
+      "count": 5,
+      "sources": [
+        "login_page",
+        "sitemap",
+        "sitemap",
+        "homepage_link",
+        "homepage_link"
+      ]
+    },
+    {
+      "domain": "fatalmodel.com",
+      "rank": 1521,
+      "count": 5,
+      "sources": [
+        "login_page",
+        "homepage_link",
+        "homepage_link",
+        "homepage_link",
+        "homepage_link"
+      ]
+    },
+    {
+      "domain": "newsis.com",
+      "rank": 13479,
+      "count": 5,
+      "sources": [
+        "sitemap",
+        "sitemap",
+        "homepage_link",
+        "homepage_link",
+        "one_level_link"
+      ]
+    },
+    {
+      "domain": "adsafety.net",
+      "rank": 36063,
+      "count": 3,
+      "sources": [
+        "sitemap",
+        "homepage_link",
+        "one_level_link"
+      ]
+    },
+    {
+      "domain": "tarteaucitron.io",
+      "rank": 81427,
+      "count": 5,
+      "sources": [
+        "sitemap",
+        "sitemap",
+        "homepage_link",
+        "homepage_link",
+        "homepage_link"
+      ]
+    },
+    {
+      "domain": "plane.so",
+      "rank": 95182,
+      "count": 5,
+      "sources": [
+        "login_page",
+        "sitemap",
+        "sitemap",
+        "homepage_link",
+        "homepage_link"
+      ]
+    }
+  ],
+  "quotas": {
+    "total_urls": {
+      "actual": 40,
+      "target": 5000,
+      "status": "FAIL"
+    },
+    "total_domains": {
+      "actual": 10,
+      "target": 1500,
+      "status": "FAIL"
+    },
+    "max_per_domain": {
+      "actual": 5,
+      "target": 5,
+      "status": "PASS"
+    },
+    "path_share": {
+      "actual": 1.0,
+      "target": 0.5,
+      "status": "PASS"
+    },
+    "query_share": {
+      "actual": 0.1,
+      "target": 0.2,
+      "status": "FAIL"
+    },
+    "login_share": {
+      "actual": 0.25,
+      "target": 0.1,
+      "status": "PASS"
+    },
+    "indian_share": {
+      "actual": 0.225,
+      "target": 0.1,
+      "status": "PASS"
+    }
+  },
+  "output_file": "data\\external\\E1_sample50.csv"
+}

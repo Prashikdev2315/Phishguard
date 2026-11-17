@@ -371,13 +371,60 @@ def run_evaluation(root: pathlib.Path) -> dict:
     )
 
     warn_threshold = choose_warn_threshold(oof_y, apply_calibrator(calibration, oof_raw))
-    block_threshold = None
+    calibrated_oof = apply_calibrator(calibration, oof_raw)
+
+    # Choose T_block on E1 validation part (out-of-fold predictions on E1 rows in training)
+    # Do not tune on hold-outs!
+    e1_sources = {"homepage_link", "sitemap", "login_page", "one_level_link", "seed_list"}
+    if "source" in train_frame.columns and train_frame["source"].isin(e1_sources).any():
+        e1_mask = train_frame["source"].isin(e1_sources).to_numpy()
+        block_threshold = choose_block_threshold(oof_y[e1_mask], calibrated_oof[e1_mask], maximum_fpr=0.005)
+    else:
+        benign_mask = (oof_y == 0)
+        block_threshold = choose_block_threshold(oof_y[benign_mask], calibrated_oof[benign_mask], maximum_fpr=0.005)
+
+    if block_threshold is None:
+        block_threshold = DEFAULT_BLOCK_THRESHOLD
+    if warn_threshold is None:
+        warn_threshold = DEFAULT_WARN_THRESHOLD
+
+    # Evaluate hold-outs ONCE (strictly locked)
     e1_path = root / "data" / "splits" / "e1_holdout.csv"
+    e1_status = "NOT_MEASURABLE"
+    e1_fpr = None
+    e1_ci = None
     if e1_path.exists():
         e1_X, e1_y = _load_optional_labels(e1_path, expected_label="Benign")
         e1_raw = _get_proba(model, e1_X)
         e1_prob = apply_calibrator(calibration, e1_raw)
-        block_threshold = choose_block_threshold(e1_y, e1_prob)
+        e1_metrics = _metric_at_threshold(e1_y, e1_prob, block_threshold)
+        e1_fpr = e1_metrics["fpr"]
+        from ml.evaluate_e1 import wilson_interval
+        n_e1 = len(e1_y)
+        fp_e1 = int(np.sum((e1_prob >= block_threshold) & (e1_y == 0)))
+        e1_ci = wilson_interval(fp_e1, n_e1)
+        e1_status = "PASS" if e1_fpr <= 0.005 else "FAIL"
+
+    e2_path = root / "data" / "splits" / "e2_holdout.csv"
+    e2_status = "NOT_MEASURABLE (E2 missing)"
+    e2_recall = None
+    if e2_path.exists():
+        e2_X, e2_y = _load_optional_labels(e2_path, expected_label="Malicious")
+        e2_raw = _get_proba(model, e2_X)
+        e2_prob = apply_calibrator(calibration, e2_raw)
+        e2_metrics = _metric_at_threshold(e2_y, e2_prob, block_threshold)
+        e2_recall = e2_metrics["recall"]
+        e2_status = "PASS" if e2_recall >= 0.80 else "FAIL"
+
+    # G-2 requires both D1 recall >= 90% and E2 recall >= 80%.
+    # When E2 is missing, G-2 must be reported as not measurable (E2 missing), never pass or fail.
+    if e2_path.exists():
+        g2_overall_status = "PASS" if (test_metrics["recall"] >= 0.90 and e2_recall is not None and e2_recall >= 0.80) else "FAIL"
+    else:
+        g2_overall_status = "NOT_MEASURABLE (E2 missing)"
+
+    # Default enforcement mode: keep warn_only unless G-3 passes
+    default_enforcement = "block" if e1_status == "PASS" else "warn_only"
 
     thresholds = json.loads((root / "thresholds.json").read_text(encoding="utf-8"))
     threshold_source = "calibration" if block_threshold is not None and warn_threshold is not None else "default"
@@ -388,7 +435,8 @@ def run_evaluation(root: pathlib.Path) -> dict:
             "T_suspicious_min": round(warn_threshold * 100),
             "T_safe_max": max(0, round(warn_threshold * 100) - 1),
             "T_high_risk_min": round(block_threshold * 100),
-            "set_by": "chunk-6-calibration",
+            "default_enforcement": default_enforcement,
+            "set_by": "chunk-e-calibration",
             "set_at": datetime.now(timezone.utc).isoformat(),
         })
         (root / "thresholds.json").write_text(json.dumps(thresholds, indent=2) + "\n", encoding="utf-8")
@@ -399,12 +447,15 @@ def run_evaluation(root: pathlib.Path) -> dict:
         _gate_status("G-1", "PASS" if best.get("holdout_balanced_acc", 0) - benchmark["shortcut_baseline_balanced_acc"] >= 0.05 else "FAIL",
                      "grouped-test balanced accuracy exceeds shortcut baseline by at least 5 pp",
                      margin=round(best.get("holdout_balanced_acc", 0) - benchmark["shortcut_baseline_balanced_acc"], 6)),
-        _gate_status("G-2", "PASS" if test_metrics["recall"] >= 0.90 else "FAIL",
+        _gate_status("G-2", g2_overall_status,
                      "recall >= 90% on D1 grouped hold-out and >= 80% on E2",
-                     d1_recall=test_metrics["recall"], e2="NOT_MEASURABLE"),
-        _gate_status("G-3", "NOT_MEASURABLE" if not e1_path.exists() else "PENDING",
+                     d1_recall=test_metrics["recall"],
+                     d1_status="PASS" if test_metrics["recall"] >= 0.90 else "FAIL",
+                     e2=e2_recall if e2_recall is not None else "NOT_MEASURABLE (E2 missing)",
+                     e2_status=e2_status),
+        _gate_status("G-3", e1_status,
                      "FPR <= 0.5% on E1 hold-out with 95% Wilson interval",
-                     e1_available=e1_path.exists()),
+                     e1_available=e1_path.exists(), empirical_fpr=e1_fpr, wilson_95_ci=e1_ci),
         _gate_status("G-4", "PASS" if all(r.get("gates", {}).get("G4_pass", False) for r in benchmark["runs"] if r.get("status") == "ok") else "FAIL",
                      "random-split minus grouped-split balanced accuracy <= 5 pp"),
         _gate_status("G-5", "NOT_MEASURABLE", "Python/TypeScript risk differs by at most 1 point"),
@@ -434,7 +485,9 @@ def run_evaluation(root: pathlib.Path) -> dict:
         "gates": gates,
         "evidence": {
             "e1_available": e1_path.exists(),
-            "e2_available": (root / "data" / "external" / "E2_phishing.csv").exists(),
+            "e2_available": e2_path.exists(),
+            "e2_temporal_split": "NOT_MEASURABLE (E2 missing)" if not e2_path.exists() else "computed",
+            "e2_holdout": "NOT_MEASURABLE (E2 missing)" if not e2_path.exists() else str(e2_path),
             "typescript_parity_available": False,
             "browser_performance_available": False,
         },

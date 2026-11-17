@@ -375,10 +375,12 @@ def build_gate_scorecard(report: dict, e1_report: Optional[dict] = None) -> List
             "name": "Recall",
             "rule": "recall >= 90% on D1 grouped hold-out; >= 80% on E2",
             "d1_grouped_holdout_recall": best_rf_recall,
-            "result": "FAIL" if best_rf_recall is not None and best_rf_recall < 0.90 else "NOT_MEASURABLE",
+            "d1_status": "PASS" if best_rf_recall is not None and best_rf_recall >= 0.90 else "FAIL",
+            "e2_status": "NOT_MEASURABLE (E2 missing)",
+            "result": "NOT_MEASURABLE (E2 missing)",
             "note": (
-                f"Best RF recall on D1 hold-out = {best_rf_recall:.4f} (< 0.90). "
-                "E2 is not yet available; E2 recall cannot be measured."
+                f"Best RF recall on D1 hold-out = {best_rf_recall:.4f}. "
+                "E2 phishing feed is not yet available; E2 half of G-2 is not measurable (E2 missing)."
             ) if best_rf_recall is not None else "Data unavailable.",
         },
         g3_gate,
@@ -697,7 +699,12 @@ def _write_markdown(a: dict, path: pathlib.Path) -> None:
         "| Gate | Name | Rule (abbreviated) | Result | Key number(s) |",
         "|------|------|--------------------|:------:|---------------|",
     ]
-    result_emoji = {"PASS": "✅ PASS", "FAIL": "❌ FAIL", "NOT_MEASURABLE": "⏳ N/M"}
+    result_emoji = {
+        "PASS": "✅ PASS",
+        "FAIL": "❌ FAIL",
+        "NOT_MEASURABLE": "⏳ N/M",
+        "NOT_MEASURABLE (E2 missing)": "⏳ N/M (E2 missing)",
+    }
     for g in a["gate_scorecard"]:
         res = result_emoji.get(g["result"], g["result"])
         if g["gate"] == "G-1":

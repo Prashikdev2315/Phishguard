@@ -34,6 +34,7 @@ import logging
 import os
 import pathlib
 import random
+import re
 import sys
 import time
 import urllib.parse
@@ -59,19 +60,195 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 
-USER_AGENT = "PhishGuard-E1Research/1.0 (academic; contact: project-maintainer)"
-REQUEST_TIMEOUT = 10          # seconds per request
+USER_AGENT = "PhishGuard-E1Research/1.0 (+https://github.com/phishguard-project/phishguard; academic research; 1 req/sec/host)"
+REQUEST_TIMEOUT = 8           # seconds per request
 RATE_LIMIT_SECONDS = 1.0      # min seconds between requests to the same host
-MIN_TOTAL_DOMAINS = 800
+MAX_RETRIES = 1               # hard cap on HTTP attempts (1 attempt, no retry loops)
+MIN_TOTAL_DOMAINS = 1500
+MIN_TOTAL_URLS = 5000
+MAX_PER_DOMAIN = 5
 
-DEFAULT_SAMPLE = [100, 300, 400]
+DEFAULT_SAMPLE = [500, 750, 750, 750]
+
+LOGIN_TOKEN_PATTERN = re.compile(
+    r"(?:^|[/_.\?&#=\-])(login|signin|sign-in|log-in|signup|sign-up|register|account|accounts|myaccount|my-account|auth|sso|oauth)(?:$|[/_.\?&#=\-])",
+    re.I,
+)
 
 LOGIN_KEYWORDS = (
     "login", "signin", "sign-in", "log-in", "account",
     "auth", "portal", "session", "myaccount", "my-account",
     "user/login", "admin/login", "auth/login", "users/sign_in",
-    "oauth", "sso"
+    "oauth", "sso", "signup", "sign-up", "register", "join",
+    "enroll", "user/register", "profile",
 )
+
+EXCLUDED_MARKETING_PATTERN = re.compile(
+    r"/(?:features|blog|news|legals|legal|terms|privacy|docs|documentation|pricing|about|marketing|products)/",
+    re.I,
+)
+
+ADULT_TLDS = (".xxx", ".adult", ".porn", ".sex")
+ADULT_KEYWORDS = (
+    "porn", "xxx", "escort", "fatalmodel", "camgirl", "nsfw",
+    "erotic", "fetish", "stripchat", "chaturbate", "adultwork",
+    "redtube", "youporn", "xhamster", "xnxx", "xvideos", "onlyfans",
+)
+
+INDIAN_TLDS = (
+    ".in", ".co.in", ".gov.in", ".org.in", ".net.in", ".ac.in",
+    ".edu.in", ".res.in", ".nic.in", ".mil.in"
+)
+
+INDIAN_DOMAINS = {
+    "flipkart.com", "paytm.com", "zomato.com", "swiggy.com", "myntra.com",
+    "bookmyshow.com", "makemytrip.com", "naukri.com", "irctc.co.in", "sbi.co.in",
+    "hdfcbank.com", "icicibank.com", "incometax.gov.in", "uidai.gov.in",
+    "hotstar.com", "jio.com", "airtel.in", "timesofindia.indiatimes.com",
+    "indiatimes.com", "ndtv.com", "thehindu.com", "hindustantimes.com",
+    "moneycontrol.com", "zerodha.com", "groww.in", "upstox.com"
+}
+
+INDIAN_LANG_INDICATORS = (
+    "/hi/", "/ta/", "/te/", "/bn/", "/mr/", "/gu/", "/kn/", "/ml/", "/pa/",
+    "/hindi/", "/tamil/", "/telugu/", "/bengali/", "/marathi/", "/gujarati/",
+    "hi.wikipedia.org", "ta.wikipedia.org", "te.wikipedia.org", "bn.wikipedia.org",
+    "mr.wikipedia.org", "gu.wikipedia.org", "kn.wikipedia.org", "ml.wikipedia.org",
+    "pa.wikipedia.org", "hl=hi", "hl=ta", "hl=te", "hl=bn", "hl=mr", "lang=hi",
+)
+
+SEED_LIST: Dict[str, List[str]] = {
+    "youtube.com": [
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "https://www.youtube.com/results?search_query=cybersecurity",
+        "https://www.youtube.com/account",
+    ],
+    "flipkart.com": [
+        "https://www.flipkart.com/search?q=laptop",
+        "https://www.flipkart.com/apple-iphone-13-midnight-128-gb/p/itmca5553dd3f76f",
+        "https://www.flipkart.com/account/login?ret=/",
+    ],
+    "amazon.in": [
+        "https://www.amazon.in/s?k=books",
+        "https://www.amazon.in/dp/B08L5VJY37",
+        "https://www.amazon.in/ap/signin?openid.mode=checkid_setup",
+    ],
+    "google.com": [
+        "https://www.google.com/search?q=phishing+detection",
+        "https://www.google.com/maps/@28.6139,77.2090,13z",
+        "https://docs.google.com/document/u/0/",
+    ],
+    "wikipedia.org": [
+        "https://en.wikipedia.org/wiki/Computer_security",
+        "https://en.wikipedia.org/w/index.php?search=machine+learning",
+        "https://en.wikipedia.org/w/index.php?title=Special:UserLogin",
+    ],
+    "github.com": [
+        "https://github.com/search?q=security",
+        "https://github.com/login",
+        "https://github.com/settings/profile",
+    ],
+    "irctc.co.in": [
+        "https://www.irctc.co.in/nget/train-search",
+        "https://www.irctc.co.in/nget/profile/user-login",
+        "https://www.irctc.co.in/nget/profile/user-registration",
+    ],
+    "sbi.co.in": [
+        "https://retail.onlinesbi.sbi/retail/login.htm",
+        "https://sbi.co.in/web/personal-banking/accounts",
+        "https://sbi.co.in/web/quick-links",
+    ],
+    "paytm.com": [
+        "https://paytm.com/recharge",
+        "https://paytm.com/care/ticket",
+        "https://tickets.paytm.com/flights/",
+    ],
+    "myntra.com": [
+        "https://www.myntra.com/men-tshirts",
+        "https://www.myntra.com/login",
+        "https://www.myntra.com/checkout/cart",
+    ],
+    "zomato.com": [
+        "https://www.zomato.com/delivery",
+        "https://www.zomato.com/users/profile",
+        "https://www.zomato.com/partner_with_us",
+    ],
+    "swiggy.com": [
+        "https://www.swiggy.com/restaurants",
+        "https://www.swiggy.com/my-account",
+        "https://www.swiggy.com/checkout",
+    ],
+    "hdfcbank.com": [
+        "https://netbanking.hdfcbank.com/netbanking/",
+        "https://www.hdfcbank.com/personal/ways-to-bank/online-banking/net-banking",
+        "https://www.hdfcbank.com/personal/save/accounts",
+    ],
+    "icicibank.com": [
+        "https://infinity.icicibank.com/corp/AuthenticationController",
+        "https://www.icicibank.com/personal-banking/accounts/savings-account",
+        "https://www.icicibank.com/search?q=fixed+deposit",
+    ],
+    "linkedin.com": [
+        "https://www.linkedin.com/login",
+        "https://www.linkedin.com/feed/",
+        "https://www.linkedin.com/search/results/all/?keywords=security",
+    ],
+    "instagram.com": [
+        "https://www.instagram.com/accounts/login/",
+        "https://www.instagram.com/explore/",
+        "https://www.instagram.com/accounts/emailsignup/",
+    ],
+    "facebook.com": [
+        "https://www.facebook.com/login/",
+        "https://www.facebook.com/r.php",
+        "https://www.facebook.com/watch/",
+    ],
+    "x.com": [
+        "https://x.com/login",
+        "https://x.com/i/flow/signup",
+        "https://x.com/explore",
+    ],
+    "microsoft.com": [
+        "https://login.microsoftonline.com/",
+        "https://www.microsoft.com/en-us/store/b/home",
+        "https://account.microsoft.com/account",
+    ],
+    "apple.com": [
+        "https://appleid.apple.com/sign-in",
+        "https://www.apple.com/shop/buy-iphone",
+        "https://support.apple.com/en-us",
+    ],
+    "netflix.com": [
+        "https://www.netflix.com/login",
+        "https://www.netflix.com/signup",
+        "https://www.netflix.com/browse",
+    ],
+    "bookmyshow.com": [
+        "https://in.bookmyshow.com/explore/movies",
+        "https://in.bookmyshow.com/my-profile",
+        "https://in.bookmyshow.com/cinemas",
+    ],
+    "makemytrip.com": [
+        "https://www.makemytrip.com/flights/",
+        "https://www.makemytrip.com/hotels/",
+        "https://www.makemytrip.com/account/login",
+    ],
+    "naukri.com": [
+        "https://www.naukri.com/nlogin/login",
+        "https://www.naukri.com/it-jobs",
+        "https://www.naukri.com/account/createaccount",
+    ],
+    "incometax.gov.in": [
+        "https://eportal.incometax.gov.in/iec/foservices/#/login",
+        "https://www.incometax.gov.in/iec/foportal/",
+        "https://eportal.incometax.gov.in/iec/foservices/#/pre-login/register",
+    ],
+    "uidai.gov.in": [
+        "https://myaadhaar.uidai.gov.in/",
+        "https://uidai.gov.in/en/my-aadhaar/get-aadhaar.html",
+        "https://appointments.uidai.gov.in/bookappointment.aspx",
+    ],
+}
 
 
 # ---------------------------------------------------------------------------
@@ -266,15 +443,65 @@ def registrable_domain(hostname: str) -> Optional[str]:
 
 
 # ---------------------------------------------------------------------------
-# Login / Account detection
+# Login / Account and Content detection
 # ---------------------------------------------------------------------------
 
+def is_adult_domain(domain: str) -> bool:
+    """Return True if domain matches adult TLDs or adult content keywords."""
+    d = domain.lower()
+    if any(d.endswith(tld) for tld in ADULT_TLDS):
+        return True
+    parts = re.split(r"[.-]", d)
+    return any(k in parts or k in d for k in ADULT_KEYWORDS)
+
+
 def is_login_like(url: str) -> bool:
-    """Return True if path or query has login/account keywords."""
-    p = urllib.parse.urlparse(url)
+    """Return True if normalized decoded path, query, or fragment contains login/account tokens.
+
+    Based on the normalized decoded URL string that feature computation uses,
+    with boundary matching so 'sso' does not match 'associate', 'portal' does not
+    match 'foportal', and fragment routes like '#/login' are evaluated.
+    """
+    try:
+        from ml.normalize import normalize
+        r = normalize(url)
+        p = urllib.parse.urlsplit(r.decoded_url)
+        target = p.path + ("?" + p.query if p.query else "") + ("#" + p.fragment if p.fragment else "")
+        return bool(LOGIN_TOKEN_PATTERN.search(target))
+    except Exception:
+        p = urllib.parse.urlsplit(url)
+        target = p.path + ("?" + p.query if p.query else "") + ("#" + p.fragment if p.fragment else "")
+        return bool(LOGIN_TOKEN_PATTERN.search(target))
+
+
+def is_actual_login_page(url: str) -> bool:
+    """Strict check for assigning the 'login_page' crawler source tag.
+
+    Requires an explicit login/signup token while excluding marketing, feature,
+    documentation, and legal agreement pages.
+    """
+    if not is_login_like(url):
+        return False
+    p = urllib.parse.urlsplit(url)
     path = p.path.lower()
-    query = p.query.lower()
-    return any(k in path or k in query for k in LOGIN_KEYWORDS)
+    if EXCLUDED_MARKETING_PATTERN.search(path):
+        return False
+    return True
+
+
+def is_indian(url: str, domain: Optional[str] = None) -> bool:
+    """Return True if URL is from an Indian site or in an Indian language."""
+    p = urllib.parse.urlparse(url)
+    host = p.netloc.lower()
+    if domain and any(domain.endswith(tld) for tld in INDIAN_TLDS):
+        return True
+    if any(host.endswith(tld) for tld in INDIAN_TLDS):
+        return True
+    reg = registrable_domain(host)
+    if reg and reg in INDIAN_DOMAINS:
+        return True
+    full = url.lower()
+    return any(ind in full for ind in INDIAN_LANG_INDICATORS)
 
 
 # ---------------------------------------------------------------------------
@@ -287,9 +514,9 @@ def collect_domain_urls(
     d1_domains: Set[str],
 ) -> Tuple[List[Tuple[str, str]], str]:
     """
-    Collect diverse inner-page URLs for a single domain.
+    Collect diverse inner-page URLs for a single domain (up to 5 URLs).
     Returns ([(url, source), ...], status_string)
-    Where source is 'homepage_link', 'sitemap', or 'login_page'.
+    Where source is 'homepage_link', 'sitemap', 'login_page', or 'one_level_link'.
     """
     homepage = f"https://{domain}/"
 
@@ -372,22 +599,22 @@ def collect_domain_urls(
     selected: List[Tuple[str, str]] = []
     all_candidates = [(u, "sitemap") for u in sitemap_candidates] + [(u, "homepage") for u in homepage_candidates]
 
-    # Up to 1 login/account-style path
-    login_matches = [u for u, src in all_candidates if is_login_like(u)]
+    # Up to 1 actual login/account-style path
+    login_matches = [u for u, src in all_candidates if is_actual_login_page(u)]
     selected_login: Optional[str] = None
     if login_matches:
         selected_login = login_matches[0]
         selected.append((selected_login, "login_page"))
 
     # Up to 2 sitemap URLs (excluding login)
-    sitemap_filtered = [u for u in sitemap_candidates if u != selected_login and not is_login_like(u)]
+    sitemap_filtered = [u for u in sitemap_candidates if u != selected_login and not is_actual_login_page(u)]
     sitemap_filtered.sort(key=lambda u: len(urllib.parse.urlparse(u).path.split("/")), reverse=True)
     for u in sitemap_filtered[:2]:
         selected.append((u, "sitemap"))
 
-    # Up to 2 (or 3 if no sitemap URLs) homepage links (varied depth, excluding login/sitemap)
+    # Up to 2 homepage links (varied depth, excluding login/sitemap)
     already_selected_urls = {u for u, s in selected}
-    hp_filtered = [u for u in homepage_candidates if u not in already_selected_urls and not is_login_like(u)]
+    hp_filtered = [u for u in homepage_candidates if u not in already_selected_urls and not is_actual_login_page(u)]
 
     by_depth: Dict[int, List[str]] = {}
     for u in hp_filtered:
@@ -403,6 +630,49 @@ def collect_domain_urls(
 
     for u in hp_selected:
         selected.append((u, "homepage_link"))
+
+    # 4. One-level link following if fewer than 5 URLs selected
+    if len(selected) < 5 and hp_selected:
+        for candidate_url in hp_selected[:1]:
+            if len(selected) >= 5:
+                break
+            if rp and not rp.can_fetch(USER_AGENT, candidate_url):
+                continue
+            sub_html = fetch_url(candidate_url, only_html=True)
+            if not sub_html:
+                continue
+            sub_links = extract_links(sub_html)
+            for href in sub_links:
+                if len(selected) >= 5:
+                    break
+                try:
+                    abs_url = urllib.parse.urljoin(candidate_url, href)
+                except Exception:
+                    continue
+                p = urllib.parse.urlparse(abs_url)
+                if p.scheme != "https":
+                    continue
+                if registrable_domain(p.netloc) != base_reg:
+                    continue
+                path = p.path.rstrip("/")
+                if not path:
+                    continue
+                clean = urllib.parse.urlunparse((p.scheme, p.netloc, p.path, p.params, p.query, ""))
+                if clean not in seen_urls:
+                    seen_urls.add(clean)
+                    selected.append((clean, "one_level_link"))
+
+    # If still fewer than 5, fill from remaining homepage or sitemap candidates
+    if len(selected) < 5:
+        already = {u for u, _ in selected}
+        for u in homepage_candidates + sitemap_candidates:
+            if u not in already:
+                already.add(u)
+                selected.append((u, "homepage_link"))
+                if len(selected) >= 5:
+                    break
+
+    selected = selected[:5]
 
     if not selected:
         return [], "no_links"
@@ -451,18 +721,40 @@ def stratified_sample(
     band_sizes: List[int],
     seed: int,
 ) -> List[Tuple[int, str]]:
-    """Stratified sample across rank bands: 1-1k, 1k-10k, 10k-100k."""
-    bands = [
-        [(r, d) for r, d in rows if 1 <= r <= 1_000],
-        [(r, d) for r, d in rows if 1_001 <= r <= 10_000],
-        [(r, d) for r, d in rows if 10_001 <= r <= 100_000],
-    ]
+    """Stratified sample across rank bands: 1-1k, 1k-10k, 10k-100k, and optionally 100k-1M.
+
+    Adult-content domains are excluded and resampled within the same rank band
+    so stratification holds. Every skipped adult domain is logged.
+    """
+    if len(band_sizes) == 4:
+        band_defs = [
+            (1, 1_000, "1-1k"),
+            (1_001, 10_000, "1k-10k"),
+            (10_001, 100_000, "10k-100k"),
+            (100_001, 1_000_000, "100k-1M"),
+        ]
+    else:
+        band_defs = [
+            (1, 1_000, "1-1k"),
+            (1_001, 10_000, "1k-10k"),
+            (10_001, 100_000, "10k-100k"),
+        ]
     rng = random.Random(seed)
     sampled: List[Tuple[int, str]] = []
-    for i, (band, n) in enumerate(zip(bands, band_sizes)):
-        available = min(n, len(band))
-        chosen = rng.sample(band, available)
+
+    for (lo, hi, band_name), n in zip(band_defs, band_sizes):
+        raw_band = [(r, d) for r, d in rows if lo <= r <= hi]
+        clean_band: List[Tuple[int, str]] = []
+        for r, d in raw_band:
+            if is_adult_domain(d):
+                LOGGER.info("Skipping adult domain rank=%d domain=%s in band %s (reason: adult_content_denylist)", r, d, band_name)
+            else:
+                clean_band.append((r, d))
+
+        available = min(n, len(clean_band))
+        chosen = rng.sample(clean_band, available)
         sampled.extend(chosen)
+
     sampled.sort(key=lambda x: x[0])
     return sampled
 
@@ -503,6 +795,59 @@ def append_checkpoint(checkpoint_path: pathlib.Path, rank: int) -> None:
 # Main collection orchestrator
 # ---------------------------------------------------------------------------
 
+def evaluate_quotas(records: List[dict]) -> dict:
+    """Evaluate E1 quota compliance.
+    Quotas:
+    - total_urls >= 5,000
+    - total_domains >= 1,500
+    - max_per_domain <= 5
+    - with_path >= 50%
+    - with_query >= 20%
+    - login_like >= 10%
+    - indian_site_or_lang >= 10%
+    """
+    total_urls = len(records)
+    domains = {r["domain"] for r in records if r.get("domain")}
+    total_domains = len(domains)
+
+    from collections import Counter
+    domain_counts = Counter(r["domain"] for r in records if r.get("domain"))
+    max_per_domain = max(domain_counts.values()) if domain_counts else 0
+
+    with_path = 0
+    with_query = 0
+    with_login = 0
+    with_indian = 0
+
+    for r in records:
+        u = r.get("URL", "")
+        p = urllib.parse.urlparse(u)
+        path = p.path.rstrip("/")
+        if path:
+            with_path += 1
+        if p.query:
+            with_query += 1
+        if is_login_like(u):
+            with_login += 1
+        if is_indian(u, r.get("domain")):
+            with_indian += 1
+
+    path_share = (with_path / total_urls) if total_urls > 0 else 0.0
+    query_share = (with_query / total_urls) if total_urls > 0 else 0.0
+    login_share = (with_login / total_urls) if total_urls > 0 else 0.0
+    indian_share = (with_indian / total_urls) if total_urls > 0 else 0.0
+
+    return {
+        "total_urls": {"actual": total_urls, "target": MIN_TOTAL_URLS, "status": "PASS" if total_urls >= MIN_TOTAL_URLS else "FAIL"},
+        "total_domains": {"actual": total_domains, "target": MIN_TOTAL_DOMAINS, "status": "PASS" if total_domains >= MIN_TOTAL_DOMAINS else "FAIL"},
+        "max_per_domain": {"actual": max_per_domain, "target": MAX_PER_DOMAIN, "status": "PASS" if max_per_domain <= MAX_PER_DOMAIN else "FAIL"},
+        "path_share": {"actual": round(path_share, 4), "target": 0.50, "status": "PASS" if path_share >= 0.50 else "FAIL"},
+        "query_share": {"actual": round(query_share, 4), "target": 0.20, "status": "PASS" if query_share >= 0.20 else "FAIL"},
+        "login_share": {"actual": round(login_share, 4), "target": 0.10, "status": "PASS" if login_share >= 0.10 else "FAIL"},
+        "indian_share": {"actual": round(indian_share, 4), "target": 0.10, "status": "PASS" if indian_share >= 0.10 else "FAIL"},
+    }
+
+
 def collect(
     tranco_path: pathlib.Path,
     out_path: pathlib.Path,
@@ -511,25 +856,9 @@ def collect(
     resume: bool,
     max_domains: Optional[int],
     root: pathlib.Path,
+    include_seed_list: bool = True,
 ) -> dict:
-    if not tranco_path.exists():
-        LOGGER.error(
-            "Tranco CSV not found at %s. Download from https://tranco-list.eu/ and place it there.",
-            tranco_path,
-        )
-        sys.exit(1)
-
-    LOGGER.info("Loading Tranco list from %s ...", tranco_path)
-    rows, list_id, list_date = load_tranco(tranco_path)
     d1_domains = load_d1_domains(root)
-    sampled = stratified_sample(rows, band_sizes, seed)
-
-    if max_domains is not None and max_domains > 0:
-        LOGGER.info("Applying --max-domains limit: capping sample at %d domains.", max_domains)
-        sampled = sampled[:max_domains]
-
-    checkpoint_path = out_path.parent / ".e1_checkpoint.txt"
-    done_ranks = load_checkpoint(checkpoint_path) if resume else set()
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     write_header = not (resume and out_path.exists())
@@ -545,56 +874,106 @@ def collect(
     domains_failed_fetch = 0
     domains_skipped_d1 = 0
     domains_no_links = 0
-    urls_by_source: Dict[str, int] = {"homepage_link": 0, "sitemap": 0, "login_page": 0}
+    urls_by_source: Dict[str, int] = {
+        "homepage_link": 0, "sitemap": 0, "login_page": 0,
+        "one_level_link": 0, "seed_list": 0
+    }
     urls_per_domain_list: List[dict] = []
+    collected_records: List[dict] = []
     collection_date = datetime.now(timezone.utc).date().isoformat()
 
-    for rank, domain in sampled:
-        if rank in done_ranks:
-            continue
+    checkpoint_path = out_path.parent / ".e1_checkpoint.txt"
+    done_ranks = load_checkpoint(checkpoint_path) if resume else set()
 
-        domains_attempted += 1
-        LOGGER.info("Crawling rank=%d domain=%s (%d/%d) ...", rank, domain, domains_attempted, len(sampled))
-
-        try:
-            urls_with_sources, status = collect_domain_urls(domain, rank, d1_domains)
-        except Exception as exc:
-            LOGGER.debug("Error crawling %s: %s", domain, exc)
-            urls_with_sources, status = [], "failed_fetch"
-
-        if status == "ok" and urls_with_sources:
-            domains_succeeded += 1
-            for url, src in urls_with_sources:
-                writer.writerow([url, domain, rank, collection_date, src])
+    # 1. Inject seed list if enabled and not already checkpointed
+    if include_seed_list and (0 not in done_ranks):
+        LOGGER.info("Processing seed list (%d domains)...", len(SEED_LIST))
+        for s_dom, s_urls in sorted(SEED_LIST.items()):
+            reg = registrable_domain(s_dom) or s_dom
+            if reg in d1_domains:
+                LOGGER.info("Seed domain %s in D1, skipping.", s_dom)
+                continue
+            curated = s_urls[:MAX_PER_DOMAIN]
+            for u in curated:
+                writer.writerow([u, s_dom, 0, collection_date, "seed_list"])
                 total_written += 1
-                urls_by_source[src] = urls_by_source.get(src, 0) + 1
+                urls_by_source["seed_list"] = urls_by_source.get("seed_list", 0) + 1
+                collected_records.append({"URL": u, "domain": s_dom, "source": "seed_list"})
             out_fh.flush()
+            domains_succeeded += 1
             urls_per_domain_list.append({
-                "domain": domain,
-                "rank": rank,
-                "count": len(urls_with_sources),
-                "sources": [s for _, s in urls_with_sources],
+                "domain": s_dom,
+                "rank": 0,
+                "count": len(curated),
+                "sources": ["seed_list"] * len(curated),
             })
-        elif status == "blocked_robots":
-            domains_blocked += 1
-        elif status == "skipped_d1":
-            domains_skipped_d1 += 1
-        elif status == "failed_fetch":
-            domains_failed_fetch += 1
-        elif status == "no_links":
-            domains_no_links += 1
+        append_checkpoint(checkpoint_path, 0)
 
-        append_checkpoint(checkpoint_path, rank)
+    # 2. Sample and crawl Tranco list if present
+    sampled: List[Tuple[int, str]] = []
+    list_id: Optional[str] = None
+    list_date: Optional[str] = None
+
+    if tranco_path.exists():
+        LOGGER.info("Loading Tranco list from %s ...", tranco_path)
+        rows, list_id, list_date = load_tranco(tranco_path)
+        sampled = stratified_sample(rows, band_sizes, seed)
+
+        if max_domains is not None and max_domains > 0:
+            LOGGER.info("Applying --max-domains limit: capping sample at %d domains.", max_domains)
+            sampled = sampled[:max_domains]
+
+        for rank, domain in sampled:
+            if rank in done_ranks:
+                continue
+
+            domains_attempted += 1
+            LOGGER.info("Crawling rank=%d domain=%s (%d/%d) ...", rank, domain, domains_attempted, len(sampled))
+
+            try:
+                urls_with_sources, status = collect_domain_urls(domain, rank, d1_domains)
+            except Exception as exc:
+                LOGGER.debug("Error crawling %s: %s", domain, exc)
+                urls_with_sources, status = [], "failed_fetch"
+
+            if status == "ok" and urls_with_sources:
+                domains_succeeded += 1
+                for url, src in urls_with_sources:
+                    writer.writerow([url, domain, rank, collection_date, src])
+                    total_written += 1
+                    urls_by_source[src] = urls_by_source.get(src, 0) + 1
+                    collected_records.append({"URL": url, "domain": domain, "source": src})
+                out_fh.flush()
+                urls_per_domain_list.append({
+                    "domain": domain,
+                    "rank": rank,
+                    "count": len(urls_with_sources),
+                    "sources": [s for _, s in urls_with_sources],
+                })
+            elif status == "blocked_robots":
+                domains_blocked += 1
+            elif status == "skipped_d1":
+                domains_skipped_d1 += 1
+            elif status == "failed_fetch":
+                domains_failed_fetch += 1
+            elif status == "no_links":
+                domains_no_links += 1
+
+            append_checkpoint(checkpoint_path, rank)
+    else:
+        LOGGER.warning("Tranco CSV not found at %s. Crawl skipped.", tranco_path)
 
     out_fh.close()
 
-    dist: Dict[str, int] = {"0": domains_attempted - domains_succeeded, "1": 0, "2": 0, "3": 0, "4": 0, "5+": 0}
+    dist: Dict[str, int] = {"0": domains_attempted - (domains_succeeded - len(SEED_LIST) if include_seed_list else domains_succeeded), "1": 0, "2": 0, "3": 0, "4": 0, "5+": 0}
     for item in urls_per_domain_list:
         c = item["count"]
         if c >= 5:
             dist["5+"] += 1
         else:
             dist[str(c)] = dist.get(str(c), 0) + 1
+
+    quotas = evaluate_quotas(collected_records)
 
     summary = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -615,6 +994,7 @@ def collect(
         "urls_by_source": urls_by_source,
         "urls_per_domain_distribution": dist,
         "urls_per_domain": urls_per_domain_list,
+        "quotas": quotas,
         "output_file": str(out_path),
     }
 
@@ -637,6 +1017,18 @@ def collect(
         f"- **Domains Failed (fetch/timeout):** {domains_failed_fetch:,}",
         f"- **Domains Skipped (in D1):** {domains_skipped_d1:,}",
         f"- **Total URLs Collected:** {total_written:,}",
+        "",
+        "## Quota Compliance",
+        "",
+        "| Quota | Target | Actual | Status |",
+        "|---|---|---|---|",
+        f"| Total URLs | ≥ {quotas['total_urls']['target']} | {quotas['total_urls']['actual']} | {quotas['total_urls']['status']} |",
+        f"| Total Domains | ≥ {quotas['total_domains']['target']} | {quotas['total_domains']['actual']} | {quotas['total_domains']['status']} |",
+        f"| Max per Domain | ≤ {quotas['max_per_domain']['target']} | {quotas['max_per_domain']['actual']} | {quotas['max_per_domain']['status']} |",
+        f"| Has Path | ≥ {quotas['path_share']['target']*100:.0f}% | {quotas['path_share']['actual']*100:.1f}% | {quotas['path_share']['status']} |",
+        f"| Has Query | ≥ {quotas['query_share']['target']*100:.0f}% | {quotas['query_share']['actual']*100:.1f}% | {quotas['query_share']['status']} |",
+        f"| Login / Account | ≥ {quotas['login_share']['target']*100:.0f}% | {quotas['login_share']['actual']*100:.1f}% | {quotas['login_share']['status']} |",
+        f"| Indian Sites / Languages | ≥ {quotas['indian_share']['target']*100:.0f}% | {quotas['indian_share']['actual']*100:.1f}% | {quotas['indian_share']['status']} |",
         "",
         "## URLs by Source",
         "",
@@ -687,8 +1079,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--sample-per-band",
-        default="100,300,400",
-        help="Comma-separated sample counts for bands 1-1k, 1k-10k, 10k-100k. Default: 100,300,400",
+        default="500,750,750,750",
+        help="Comma-separated sample counts for rank bands (3 bands: 1-1k, 1k-10k, 10k-100k; or 4 bands: 1-1k, 1k-10k, 10k-100k, 100k-1M). Default: 500,750,750,750",
     )
     parser.add_argument(
         "--max-domains",
@@ -707,16 +1099,21 @@ def main() -> None:
         action="store_true",
         help="Resume from checkpoint (append to existing output file).",
     )
+    parser.add_argument(
+        "--no-seed-list",
+        action="store_true",
+        help="Do not include the 26 seed list domains.",
+    )
     args = parser.parse_args()
 
     try:
         band_sizes = [int(x.strip()) for x in args.sample_per_band.split(",")]
     except ValueError:
-        parser.error("--sample-per-band must be comma-separated integers, e.g. 100,300,400")
+        parser.error("--sample-per-band must be comma-separated integers, e.g. 500,750,750,750")
         return
 
-    if len(band_sizes) != 3:
-        parser.error("--sample-per-band requires exactly 3 values.")
+    if len(band_sizes) not in (3, 4):
+        parser.error("--sample-per-band requires 3 or 4 values.")
 
     collect(
         tranco_path=pathlib.Path(args.tranco),
@@ -726,6 +1123,7 @@ def main() -> None:
         resume=args.resume,
         max_domains=args.max_domains,
         root=ROOT,
+        include_seed_list=not args.no_seed_list,
     )
 
 

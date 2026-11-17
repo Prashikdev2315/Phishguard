@@ -31,6 +31,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import pathlib
 import sys
 import urllib.parse
@@ -52,11 +53,51 @@ from ml.features import extract_vector  # noqa: E402
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
-LOGIN_KEYWORDS = (
-    "login", "signin", "sign-in", "log-in", "account",
-    "auth", "portal", "session", "myaccount", "my-account",
-    "user/login", "admin/login", "oauth", "sso"
+LOGIN_TOKEN_PATTERN = re.compile(
+    r"(?:^|[/_.\?&#=\-])(login|signin|sign-in|log-in|signup|sign-up|register|account|accounts|myaccount|my-account|auth|sso|oauth)(?:$|[/_.\?&#=\-])",
+    re.I,
 )
+
+INDIAN_TLDS = (
+    ".in", ".co.in", ".gov.in", ".org.in", ".net.in", ".ac.in",
+    ".edu.in", ".res.in", ".nic.in", ".mil.in"
+)
+
+INDIAN_DOMAINS = {
+    "flipkart.com", "paytm.com", "zomato.com", "swiggy.com", "myntra.com",
+    "bookmyshow.com", "makemytrip.com", "naukri.com", "irctc.co.in", "sbi.co.in",
+    "hdfcbank.com", "icicibank.com", "incometax.gov.in", "uidai.gov.in",
+    "hotstar.com", "jio.com", "airtel.in", "timesofindia.indiatimes.com",
+    "indiatimes.com", "ndtv.com", "thehindu.com", "hindustantimes.com",
+    "moneycontrol.com", "zerodha.com", "groww.in", "upstox.com"
+}
+
+INDIAN_LANG_INDICATORS = (
+    "/hi/", "/ta/", "/te/", "/bn/", "/mr/", "/gu/", "/kn/", "/ml/", "/pa/",
+    "/hindi/", "/tamil/", "/telugu/", "/bengali/", "/marathi/", "/gujarati/",
+    "hi.wikipedia.org", "ta.wikipedia.org", "te.wikipedia.org", "bn.wikipedia.org",
+    "mr.wikipedia.org", "gu.wikipedia.org", "kn.wikipedia.org", "ml.wikipedia.org",
+    "pa.wikipedia.org", "hl=hi", "hl=ta", "hl=te", "hl=bn", "hl=mr", "lang=hi",
+)
+
+
+def is_indian(url: str, domain: Optional[str] = None) -> bool:
+    """Return True if URL is from an Indian site or in an Indian language."""
+    p = urllib.parse.urlparse(url)
+    host = p.netloc.lower()
+    if domain and any(str(domain).endswith(tld) for tld in INDIAN_TLDS):
+        return True
+    if any(host.endswith(tld) for tld in INDIAN_TLDS):
+        return True
+    try:
+        from ml.psl import get_psl
+        reg = get_psl().registrable_domain(host)
+        if reg and reg in INDIAN_DOMAINS:
+            return True
+    except Exception:
+        pass
+    full = url.lower()
+    return any(ind in full for ind in INDIAN_LANG_INDICATORS)
 
 
 # ---------------------------------------------------------------------------
@@ -87,11 +128,21 @@ def wilson_interval(errors: int, total: int, z: float = 1.959963984540054) -> Tu
 
 
 def is_login_like(url: str) -> bool:
-    """Return True if path or query has login/account keywords."""
-    p = urllib.parse.urlparse(url)
-    path = p.path.lower()
-    query = p.query.lower()
-    return any(k in path or k in query for k in LOGIN_KEYWORDS)
+    """Return True if normalized decoded path, query, or fragment contains login/account tokens.
+
+    Uses word/segment boundary matching so 'sso' does not match 'associate',
+    'portal' does not match 'foportal', and fragment routes like '#/login' are evaluated.
+    """
+    try:
+        from ml.normalize import normalize
+        r = normalize(url)
+        p = urllib.parse.urlsplit(r.decoded_url)
+        target = p.path + ("?" + p.query if p.query else "") + ("#" + p.fragment if p.fragment else "")
+        return bool(LOGIN_TOKEN_PATTERN.search(target))
+    except Exception:
+        p = urllib.parse.urlsplit(url)
+        target = p.path + ("?" + p.query if p.query else "") + ("#" + p.fragment if p.fragment else "")
+        return bool(LOGIN_TOKEN_PATTERN.search(target))
 
 
 # ---------------------------------------------------------------------------
@@ -172,34 +223,48 @@ def evaluate_e1_slices(
     # ---- Derive slicing attributes ----
     # 1. Rank band
     rank_bands = []
-    for r_str in df.get("rank", pd.Series([""] * total_urls)):
+    sources = df.get("source", pd.Series(["unknown"] * total_urls)).fillna("unknown").tolist()
+    sources = [s if s.strip() else "unknown" for s in sources]
+
+    domains = df.get("domain", pd.Series([""] * total_urls)).tolist()
+
+    for idx, r_str in enumerate(df.get("rank", pd.Series([""] * total_urls))):
+        src = sources[idx]
+        if src == "seed_list":
+            rank_bands.append("seed_list")
+            continue
         try:
             r = int(str(r_str).strip())
-            if 1 <= r <= 1000:
+            if r == 0:
+                rank_bands.append("seed_list")
+            elif 1 <= r <= 1000:
                 rank_bands.append("1-1k")
             elif 1001 <= r <= 10000:
                 rank_bands.append("1k-10k")
             elif 10001 <= r <= 100000:
                 rank_bands.append("10k-100k")
+            elif 100001 <= r <= 1000000:
+                rank_bands.append("100k-1M")
             else:
-                rank_bands.append(">100k")
+                rank_bands.append(">1M")
         except (ValueError, TypeError):
             rank_bands.append("unknown")
 
-    # 2. Source
-    sources = df.get("source", pd.Series(["unknown"] * total_urls)).fillna("unknown").tolist()
-    sources = [s if s.strip() else "unknown" for s in sources]
-
-    # 3. Has query
+    # 3. Attributes: has_query, has_path, login_like, indian
     has_query_list = []
+    has_path_list = []
     path_lengths = []
     login_like_list = []
+    indian_list = []
 
-    for u in urls:
+    for idx, u in enumerate(urls):
         p = urllib.parse.urlparse(u)
         has_query_list.append(bool(p.query))
+        has_path_list.append(bool(p.path.rstrip("/")))
         path_lengths.append(len(p.path))
         login_like_list.append(is_login_like(u))
+        dom = domains[idx] if idx < len(domains) else None
+        indian_list.append(is_indian(u, dom))
 
     # 4. Path length quartiles
     pl_arr = np.array(path_lengths)
@@ -225,7 +290,7 @@ def evaluate_e1_slices(
 
     # Rank bands
     rank_series = pd.Series(rank_bands)
-    for band_val in ("1-1k", "1k-10k", "10k-100k", ">100k", "unknown"):
+    for band_val in ("1-1k", "1k-10k", "10k-100k", "100k-1M", "seed_list", ">1M", "unknown"):
         mask = (rank_series == band_val).values
         if mask.any():
             slices.append(compute_slice_metrics(mask, y_pred, "rank_band", band_val))
@@ -235,6 +300,11 @@ def evaluate_e1_slices(
     for src_val in sorted(set(sources)):
         mask = (src_series == src_val).values
         slices.append(compute_slice_metrics(mask, y_pred, "source", src_val))
+
+    # Has path
+    hp_arr = np.array(has_path_list)
+    slices.append(compute_slice_metrics(hp_arr, y_pred, "has_path", "has_path=True"))
+    slices.append(compute_slice_metrics(~hp_arr, y_pred, "has_path", "has_path=False"))
 
     # Has query
     hq_arr = np.array(has_query_list)
@@ -251,6 +321,11 @@ def evaluate_e1_slices(
     ll_arr = np.array(login_like_list)
     slices.append(compute_slice_metrics(ll_arr, y_pred, "login_like", "login_like=True"))
     slices.append(compute_slice_metrics(~ll_arr, y_pred, "login_like", "login_like=False"))
+
+    # Indian site / language
+    ind_arr = np.array(indian_list)
+    slices.append(compute_slice_metrics(ind_arr, y_pred, "indian_site_or_lang", "indian=True"))
+    slices.append(compute_slice_metrics(~ind_arr, y_pred, "indian_site_or_lang", "indian=False"))
 
     # Acceptance check (G-3: FPR <= 0.5% point estimate, 95% Wilson interval reported)
     g3_pass = overall["fpr"] <= 0.005
