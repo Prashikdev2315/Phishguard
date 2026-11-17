@@ -1,0 +1,9 @@
+{
+  "rows": 1850,
+  "backup": "data\\external\\E1_candidates.csv.phase0.bak",
+  "old_login_page_rows": 177,
+  "recomputed_login_page_rows": 193,
+  "source_tags_changed": 16,
+  "login_class_changed": 16,
+  "rule": "tools.collect_e1.is_actual_login_page"
+}

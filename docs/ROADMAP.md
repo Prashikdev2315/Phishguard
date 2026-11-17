@@ -33,7 +33,7 @@
 - **Security (SC-01)**: Frozen minimal permissions (`storage`, `webNavigation`, `alarms`), zero `eval`, zero remote scripts, strict CSP (`script-src 'self'`).
 
 ### Chunk 5–7: Model Selection, Calibration & Export
-- **Best Model**: `RandomForestClassifier` with `rf_importance` feature selection. Holdout balanced accuracy: **90.68%** (5-fold CV: 0.9123 ± 0.0111).
+- **Current D1 Model Metadata**: `RandomForestClassifier` with `l1_lr` feature selection. Holdout balanced accuracy: **87.5794%** (grouped CV balanced accuracy: **86.2385%**). The older `rf_importance` 90.68% result is historical.
 - **Exported Binary (`model.bin`)**: Custom `PGM1` binary format packed into **1.59 MB** (well under the 2 MB PRD limit).
 - **Calibration**: Isotonic regression calibration mapped to 4 explicit risk bands: Safe (0–29), Low-Risk (30–49), Suspicious (50–69), and High-Risk (70–100).
 

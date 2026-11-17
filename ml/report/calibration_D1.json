@@ -1,4 +1,6 @@
 {
+  "status": "stale-reference",
+  "note": "Historical calibration report for the earlier rf_importance model; the active D1 benchmark/model metadata selects l1_lr with RandomForest.",
   "generated_at_utc": "2026-11-16T18:48:31.537012+00:00",
   "schema": "fs1",
   "model": {

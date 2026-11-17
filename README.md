@@ -29,7 +29,7 @@ The project is organized into 12 development chunks defined in PRD v2.0.
 
 - Cleaned D1 dataset generated: 9,677 rows (6,170 Benign, 3,507 Malicious) across 80/20 domain-grouped splits (7,781 train / 1,896 test) with 0 domain overlap.
 - Chunk 5 25-run benchmark completed: shortcut baseline is 84.25% balanced accuracy; Gate G-1 passed (+6.43 pp margin) and Gate G-4 passed (<1.2 pp gap).
-- Best model (rf_importance selector × RandomForest classifier) achieved 90.68% hold-out balanced accuracy (CV: 0.9123 ± 0.0111). Saved to `ml/models/best_model.joblib`.
+- Current D1 benchmark metadata selects `l1_lr` × RandomForest (hold-out balanced accuracy 87.5794%, grouped CV balanced accuracy 86.2385%). The older 90.68% `rf_importance` result is retained only as a historical report and is not the active model.
 - Chunk 6 calibration is implemented in `ml/evaluate.py`; the generated report is `ml/report/calibration_D1.md`.
 - Chunk 7/8 export generated as a 1,591,036-byte PGM1 binary artifact (`model.bin`) with float64 scaler parameters and float32 threshold encoding, remaining well under the 2 MiB budget.
 - Chunk 8 G-5 parity remediation complete: TypeScript runtime matches Python oracle across all D1 and hostile fixtures with 0 differing predictions. Both Pytest (187/187 tests) and Vitest (8/8 tests) pass cleanly at original tolerances.
