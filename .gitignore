@@ -36,6 +36,7 @@ data/raw/*.parquet
 *.npz
 
 .playwright_profile*/
+.chrome_dev_profile/
 __pycache__/
 .pytest_cache/
 .venv/
