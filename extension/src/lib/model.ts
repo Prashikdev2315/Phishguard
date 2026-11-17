@@ -76,7 +76,7 @@ function calibrate(model: ExportedModel, raw: number): number {
 
 export function predictProbability(model: ExportedModel, features: ArrayLike<number>): number {
   if (features.length !== model.header.feature_count) throw new Error("Expected 50 features");
-  const selected = new Array<number>(model.selected.length);
+  const selected = new Float32Array(model.selected.length);
   for (let i = 0; i < selected.length; i++) selected[i] = Number(features[model.selected[i]]) * model.scalerScale[model.selected[i]] + model.scalerMin[model.selected[i]];
   let probability = 0;
   for (const tree of model.trees) {

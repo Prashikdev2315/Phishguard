@@ -1,4 +1,9 @@
-// popup.js — spike stub (Chunk 1). Full UI in Chunk 10.
 "use strict";
-document.getElementById("status").textContent =
-  "Spike scaffold — full UI arrives in Chunk 10.";
+chrome.runtime.sendMessage({ type: "GET_TAB_STATUS" }, status => {
+  const element = document.getElementById("status");
+  if (!status) {
+    element.textContent = "No scan available.";
+    return;
+  }
+  element.textContent = `${status.band}: risk ${status.risk}/100`;
+});

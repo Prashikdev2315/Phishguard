@@ -32,30 +32,8 @@ def test_typescript_parity_gate_builds_and_runs():
     import pandas as pd
     test_frame = pd.read_csv(ROOT / "data/splits/test.csv", dtype=str, keep_default_na=False)
     oracle = _load_joblib(ROOT / "ml/models/best_model.joblib")
-    python_vectors = np.asarray([extract_vector(url) for url in test_frame["URL"]], dtype=np.float64)
-    transformed = oracle.named_steps["selector"].transform(
-        oracle.named_steps["scaler"].transform(python_vectors)
-    )
-    raw_probabilities = np.zeros(len(transformed), dtype=np.float32)
-    for estimator in oracle.named_steps["classifier"].estimators_:
-        tree = estimator.tree_
-        nodes = np.zeros(len(transformed), dtype=np.int32)
-        active = np.ones(len(transformed), dtype=bool)
-        while active.any():
-            rows = np.flatnonzero(active)
-            current = nodes[rows]
-            leaves = tree.children_left[current] == tree.children_right[current]
-            active[rows[leaves]] = False
-            branches = ~leaves
-            if branches.any():
-                branch_rows = rows[branches]
-                branch_nodes = current[branches]
-                go_left = transformed[branch_rows, tree.feature[branch_nodes]] <= tree.threshold[branch_nodes]
-                nodes[branch_rows[go_left]] = tree.children_left[branch_nodes[go_left]]
-                nodes[branch_rows[~go_left]] = tree.children_right[branch_nodes[~go_left]]
-        values = tree.value[:, 0, :]
-        raw_probabilities += (values[nodes, 1] / values[nodes].sum(axis=1)).astype(np.float32)
-    raw_probabilities /= len(oracle.named_steps["classifier"].estimators_)
+    python_vectors = np.asarray([extract_vector(url) for url in test_frame["URL"]], dtype=np.float32)
+    raw_probabilities = oracle.predict_proba(python_vectors)[:, 1]
     import struct
     binary = (ROOT / "extension/public/model.bin").read_bytes()
     header_length = struct.unpack_from("<I", binary, 5)[0]

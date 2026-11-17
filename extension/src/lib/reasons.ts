@@ -5,7 +5,7 @@ export function reasonCodes(
   risk: number,
   features: FeatureMap,
   normalized: NormalizeResult,
-  percentile = { url: 94, hostEntropy: 4.036006945330954 },
+  percentile = { url: 58, hostEntropy: 3.32 },
 ): ReasonCode[] {
   const reasons: ReasonCode[] = [];
   if (features.has_ip_host === 1) reasons.push("R-01");

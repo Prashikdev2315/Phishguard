@@ -29,3 +29,40 @@ export interface RiskVerdict {
   band: RiskBand;
   reasons: ReasonCode[];
 }
+
+export type EnforcementMode = "block" | "warn_only";
+export type FailureMode = "open" | "closed";
+export interface Settings {
+  enforcementMode: EnforcementMode;
+  failureMode: FailureMode;
+  bannerEnabled: boolean;
+}
+export interface CacheEntry {
+  risk: number;
+  band: RiskBand;
+  reasons: ReasonCode[];
+  modelVersion: string;
+  timestamp: number;
+}
+export interface HistoryEntry {
+  time: number;
+  host: string;
+  band: RiskBand;
+  risk: number;
+  action: "allow" | "warn" | "block" | "override";
+}
+export interface PendingBlock {
+  host: string;
+  displayHost: string;
+  risk: number;
+  band: RiskBand;
+  reasons: ReasonCode[];
+  modelVersion: string;
+  url: string;
+  cacheKeyHash?: string;
+}
+export const DEFAULT_SETTINGS: Settings = {
+  enforcementMode: "block",
+  failureMode: "open",
+  bannerEnabled: true,
+};

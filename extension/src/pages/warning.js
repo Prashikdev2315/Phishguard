@@ -33,9 +33,7 @@
 
   // ── Go back ────────────────────────────────────────────────────────────
   document.getElementById("btn-back").addEventListener("click", () => {
-    history.back();
-    // Fallback: if history is empty, go to new tab page
-    setTimeout(() => { location.href = "chrome://newtab"; }, 300);
+    chrome.runtime.sendMessage({ type: "GO_BACK", token }, () => {});
   });
 
   // ── Proceed-anyway flow (PRD FR-10) ───────────────────────────────────
@@ -68,7 +66,6 @@
   document.getElementById("btn-proceed").addEventListener("click", e => {
     if (!e.isTrusted) return;             // reject scripted clicks (SEC-03)
     if (!proceedEnabled) return;
-    // Chunk 9 wires PROCEED_OVERRIDE message; spike just navigates back
-    history.back();
+    chrome.runtime.sendMessage({ type: "PROCEED_OVERRIDE", token }, () => {});
   });
 })();
