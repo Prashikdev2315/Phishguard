@@ -17,8 +17,8 @@ export interface ModelHeader {
   };
   thresholds?: { T_block: number; T_warn: number };
 }
-interface Tree { left: Int32Array; right: Int32Array; feature: Int16Array; threshold: Float64Array; probabilities: Float32Array; }
-export interface ExportedModel { header: ModelHeader; scalerMin: Float32Array; scalerScale: Float32Array; selected: Uint16Array; trees: Tree[]; }
+interface Tree { left: Int32Array; right: Int32Array; feature: Int16Array; threshold: Float32Array; probabilities: Float32Array; }
+export interface ExportedModel { header: ModelHeader; scalerMin: Float64Array; scalerScale: Float64Array; selected: Uint16Array; trees: Tree[]; }
 
 const readJson = (bytes: Uint8Array): ModelHeader => JSON.parse(new TextDecoder().decode(bytes)) as ModelHeader;
 export function loadModel(buffer: ArrayBuffer | Uint8Array): ExportedModel {
@@ -29,11 +29,7 @@ export function loadModel(buffer: ArrayBuffer | Uint8Array): ExportedModel {
   const header = readJson(bytes.slice(9, 9 + headerLength));
   const payload = inflate(bytes.slice(9 + headerLength));
   let offset = 0;
-  const scalerMin = new Float32Array(payload.buffer, payload.byteOffset + offset, 50); offset += 200;
-  const scalerScale = new Float32Array(payload.buffer, payload.byteOffset + offset, 50); offset += 200;
-  const selected = new Uint16Array(payload.buffer, payload.byteOffset + offset, 20); offset += 40;
-  const trees: Tree[] = [];
-  const readArray = <T extends Int32Array | Int16Array | Float32Array | Float64Array>(
+  const readArray = <T extends Int32Array | Int16Array | Float32Array | Float64Array | Uint16Array>(
     ctor: { new (buffer: ArrayBuffer): T },
     bytesPerItem: number,
     count: number,
@@ -42,12 +38,16 @@ export function loadModel(buffer: ArrayBuffer | Uint8Array): ExportedModel {
     offset += count * bytesPerItem;
     return new ctor(bytes.buffer);
   };
+  const scalerMin = readArray(Float64Array, 8, 50);
+  const scalerScale = readArray(Float64Array, 8, 50);
+  const selected = readArray(Uint16Array, 2, 20);
+  const trees: Tree[] = [];
   for (let t = 0; t < 200; t++) {
     const count = new DataView(payload.buffer, payload.byteOffset + offset, 4).getUint32(0, true); offset += 4;
     const left = readArray(Int32Array, 4, count);
     const right = readArray(Int32Array, 4, count);
     const feature = readArray(Int16Array, 2, count);
-    const threshold = readArray(Float64Array, 8, count);
+    const threshold = readArray(Float32Array, 4, count);
     const probabilities = readArray(Float32Array, 4, count);
     trees.push({ left, right, feature, threshold, probabilities });
   }
@@ -76,10 +76,10 @@ function calibrate(model: ExportedModel, raw: number): number {
 
 export function predictProbability(model: ExportedModel, features: ArrayLike<number>): number {
   if (features.length !== model.header.feature_count) throw new Error("Expected 50 features");
-  const selected = new Array<number>(model.selected.length);
+  const selected = new Float32Array(model.selected.length);
   for (let i = 0; i < selected.length; i++) {
     const index = model.selected[i];
-    selected[i] = Math.fround(Math.fround(Number(features[index])) * model.scalerScale[index] + model.scalerMin[index]);
+    selected[i] = Math.fround(Number(features[index]) * model.scalerScale[index] + model.scalerMin[index]);
   }
   let probability = 0;
   for (const tree of model.trees) {

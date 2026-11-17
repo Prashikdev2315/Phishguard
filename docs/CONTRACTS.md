@@ -138,11 +138,11 @@ The JSON header contains `schema=fs1`, `model_version=pg-model-1.0.0`,
 `classifier=rf`, payload sizes, section offsets and lengths, calibration
 metadata, thresholds, the joblib oracle path, and the source-model SHA-256.
 
-The uncompressed payload sections are, in order, `scaler_min` (50 float32
-values), `scaler_scale` (50 float32 values), `selected_indices` (20 uint16
+The uncompressed payload sections are, in order, `scaler_min` (50 float64
+values), `scaler_scale` (50 float64 values), `selected_indices` (20 uint16
 values), and `forest`. The forest contains exactly 200 trees. Each tree is
 encoded as `node_count` (`uint32`) followed by `children_left` and
-`children_right` (`int32`), `feature` (`int16`), `threshold` (`float64`), and
+`children_right` (`int32`), `feature` (`int16`), `threshold` (`float32`), and
 leaf malicious probabilities (`float32`) arrays of `node_count` elements.
 Tree probabilities are averaged for inference after MinMax scaling and feature
 selection. The final file must be strictly smaller than 2 MiB.

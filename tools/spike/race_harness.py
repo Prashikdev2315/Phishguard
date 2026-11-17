@@ -146,6 +146,8 @@ class HarnessResults:
     note:                     str
     timestamp:                str
     extension_path:           str
+    cold_p95_ms:              Optional[float] = None
+    warm_p95_ms:              Optional[float] = None
     runs:                     List[dict] = field(default_factory=list)
 
 
@@ -249,9 +251,29 @@ async def _run_harness(
         # ── open a CDP session on the page for SW termination ──────────────
         cdp = await context.new_cdp_session(page)
 
-        # ── warm-up: allow SW to load ──────────────────────────────────────
+        # ── warm-up: allow SW to load and set block mode ───────────────────
         await page.goto("about:blank")
         await asyncio.sleep(1.5)
+        try:
+            targets = await cdp.send("Target.getTargets")
+            for t in targets.get("targetInfos", []):
+                if "chrome-extension://" in t.get("url", ""):
+                    ext_id = t["url"].split("://")[1].split("/")[0]
+                    popup_url = f"chrome-extension://{ext_id}/src/pages/popup.html"
+                    await page.goto(popup_url)
+                    await asyncio.sleep(0.3)
+                    await page.evaluate("""
+                        async () => {
+                            await chrome.storage.local.set({
+                                settings: { enforcementMode: "block", failureMode: "open", bannerEnabled: true }
+                            });
+                        }
+                    """)
+                    await page.goto("about:blank")
+                    await asyncio.sleep(0.5)
+                    break
+        except Exception as e:
+            print(f"[race_harness] Warning: could not preconfigure settings: {e}")
 
         # ── run loop ───────────────────────────────────────────────────────
         for i in range(runs):
@@ -322,6 +344,16 @@ async def _run_harness(
     c_rate = c_shown / len(colds) if colds else None
     w_rate = w_shown / len(warms) if warms else None
 
+    cold_times = [r.t_commit_s * 1000 for r in colds]
+    warm_times = [r.t_commit_s * 1000 for r in warms]
+    try:
+        import numpy as np
+        c_p95 = round(float(np.percentile(cold_times, 95)), 2) if cold_times else None
+        w_p95 = round(float(np.percentile(warm_times, 95)), 2) if warm_times else None
+    except Exception:
+        c_p95 = None
+        w_p95 = None
+
     if rate >= 0.99:
         verdict = "PASS"
         note = (
@@ -355,6 +387,8 @@ async def _run_harness(
         warm_interstitial_shown=w_shown,
         cold_interstitial_rate=round(c_rate, 4) if c_rate is not None else None,
         warm_interstitial_rate=round(w_rate, 4) if w_rate is not None else None,
+        cold_p95_ms=c_p95,
+        warm_p95_ms=w_p95,
         route_target_fetched=r_fetched,
         route_no_fetch=r_nofetch,
         verdict=verdict,
@@ -388,6 +422,8 @@ def _write_spike_results_md(results: HarnessResults, out_path: pathlib.Path) -> 
 | `interstitial_rate`         | ≥ 0.99   | {r.interstitial_rate:.4f} ({r.interstitial_shown}/{r.total_runs}) | **{r.verdict}** |
 | `cold_interstitial_rate`    | reported | {cold_rate_str} ({r.cold_interstitial_shown}/{r.cold_runs})       | reported  |
 | `warm_interstitial_rate`    | reported | {warm_rate_str} ({r.warm_interstitial_shown}/{r.warm_runs})       | reported  |
+| `cold_start_p95`            | < 150 ms | {f"{r.cold_p95_ms:.1f} ms" if r.cold_p95_ms is not None else "n/a"} | reported  |
+| `warm_p95`                  | < 30 ms  | {f"{r.warm_p95_ms:.1f} ms" if r.warm_p95_ms is not None else "n/a"} | reported  |
 
 **Verdict: {r.verdict}**
 {r.note}

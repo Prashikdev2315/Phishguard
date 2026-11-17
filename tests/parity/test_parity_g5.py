@@ -32,7 +32,7 @@ def test_typescript_parity_gate_builds_and_runs():
     import pandas as pd
     test_frame = pd.read_csv(ROOT / "data/splits/test.csv", dtype=str, keep_default_na=False)
     oracle = _load_joblib(ROOT / "ml/models/best_model.joblib")
-    python_vectors = np.asarray([extract_vector(url) for url in test_frame["URL"]], dtype=np.float32)
+    python_vectors = np.asarray([extract_vector(url) for url in test_frame["URL"]], dtype=np.float64)
     raw_probabilities = oracle.predict_proba(python_vectors)[:, 1]
     import struct
     binary = (ROOT / "extension/public/model.bin").read_bytes()
@@ -61,7 +61,7 @@ def test_typescript_parity_gate_builds_and_runs():
             "raw_length": py_norm.raw_length,
         }:
             normalization_mismatches += 1
-        max_feature_diff = max(max_feature_diff, float(np.max(np.abs(np.asarray(row["vector"], dtype=np.float32) - python_vectors[index]))))
+        max_feature_diff = max(max_feature_diff, float(np.max(np.abs(np.asarray(row["vector"], dtype=np.float64) - python_vectors[index]))))
         max_risk_diff = max(max_risk_diff, abs(int(row["risk"]) - int(python_risks[index])))
     assert normalization_mismatches == 0
     assert max_feature_diff <= 1e-6

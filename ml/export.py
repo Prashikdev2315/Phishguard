@@ -49,7 +49,11 @@ def _tree_bytes(tree) -> bytes:
     left = np.asarray(structure.children_left, dtype="<i4")
     right = np.asarray(structure.children_right, dtype="<i4")
     feature = np.asarray(structure.feature, dtype="<i2")
-    threshold = np.asarray(structure.threshold, dtype="<f8")
+    t_f64 = np.asarray(structure.threshold, dtype=np.float64)
+    t_f32 = np.asarray(t_f64, dtype=np.float32)
+    round_up = t_f32.astype(np.float64) > t_f64
+    t_f32[round_up] = np.nextafter(t_f32[round_up], np.float32(-np.inf))
+    threshold = np.asarray(t_f32, dtype="<f4")
     values = np.asarray(structure.value, dtype=np.float64)
     totals = values.sum(axis=2)
     probabilities = np.divide(
@@ -122,8 +126,8 @@ def _header_and_payload(model, root: pathlib.Path, model_path: pathlib.Path) -> 
     if len(scaler.min_) != 50 or len(scaler.scale_) != 50:
         raise ValueError("The exporter requires the frozen fs1 50-feature schema")
 
-    scaler_min = np.asarray(scaler.min_, dtype="<f4").tobytes()
-    scaler_scale = np.asarray(scaler.scale_, dtype="<f4").tobytes()
+    scaler_min = np.asarray(scaler.min_, dtype="<f8").tobytes()
+    scaler_scale = np.asarray(scaler.scale_, dtype="<f8").tobytes()
     selected = selected_indices.tobytes()
     forest = _forest_bytes(classifier)
     sections = {}
@@ -224,8 +228,8 @@ def load_exported_model(path: pathlib.Path) -> dict:
     compressed = raw[header_end:]
     payload = zlib.decompress(compressed)
     sections = header["sections"]
-    scaler_min = _read_array(payload, sections["scaler_min"], "<f4", header["feature_count"])
-    scaler_scale = _read_array(payload, sections["scaler_scale"], "<f4", header["feature_count"])
+    scaler_min = _read_array(payload, sections["scaler_min"], "<f8", header["feature_count"])
+    scaler_scale = _read_array(payload, sections["scaler_scale"], "<f8", header["feature_count"])
     selected_indices = _read_array(payload, sections["selected_indices"], "<u2", header["k"])
     forest_start = int(sections["forest"]["offset"])
     forest_end = forest_start + int(sections["forest"]["length"])
@@ -238,7 +242,7 @@ def load_exported_model(path: pathlib.Path) -> dict:
             ("children_left", "<i4"),
             ("children_right", "<i4"),
             ("feature", "<i2"),
-            ("threshold", "<f8"),
+            ("threshold", "<f4"),
             ("probabilities", "<f4"),
         )
         tree = {"node_count": node_count}
@@ -260,11 +264,11 @@ def load_exported_model(path: pathlib.Path) -> dict:
 
 def predict_exported_model(model_dict: dict, X: np.ndarray) -> np.ndarray:
     """Return malicious probabilities from an unpacked PGM1 model."""
-    features = np.asarray(X, dtype=np.float32)
+    features = np.asarray(X, dtype=np.float64)
     if features.ndim != 2 or features.shape[1] != model_dict["header"]["feature_count"]:
         raise ValueError("X must have shape (n_samples, 50)")
     scaled = features * model_dict["scaler_scale"] + model_dict["scaler_min"]
-    selected = scaled[:, model_dict["selected_indices"]]
+    selected = np.asarray(scaled[:, model_dict["selected_indices"]], dtype=np.float32)
     predictions = np.zeros(len(selected), dtype=np.float32)
     for tree in model_dict["trees"]:
         node = np.zeros(len(selected), dtype=np.int32)

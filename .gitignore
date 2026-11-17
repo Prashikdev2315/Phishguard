@@ -36,6 +36,7 @@ data/raw/*.parquet
 *.npz
 
 .playwright_profile/
+.playwright_profile_test/
 __pycache__/
 .pytest_cache/
 .venv/

@@ -54,7 +54,7 @@ def test_exported_predictions_match_joblib_oracle():
     oracle = _load_joblib(MODEL_PATH)
     transformed = oracle.named_steps["selector"].transform(
         oracle.named_steps["scaler"].transform(frame)
-    )
+    ).astype(np.float32)
     expected = np.zeros(len(frame), dtype=np.float32)
     for estimator in oracle.named_steps["classifier"].estimators_:
         tree = estimator.tree_

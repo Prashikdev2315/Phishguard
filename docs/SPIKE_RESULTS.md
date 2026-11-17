@@ -2,8 +2,8 @@
 
 **PRD reference:** §4 MV3 engineering notes, FR-09, E2E-10, risk R-03
 **Harness:** `tools/spike/race_harness.py` (Playwright)
-**Run at:** 2026-11-16T07:21:27.882414Z
-**Extension:** `C:\Users\hp\Desktop\Phishguard\extension`
+**Run at:** 2026-11-17T07:21:33.152402Z
+**Extension:** `C:\Users\dell\Desktop\7th sem\cyber security\Project\phishguard\extension`
 
 ---
 
@@ -11,12 +11,14 @@
 
 | Metric                      | Required | Actual                                   | Result    |
 |-----------------------------|----------|------------------------------------------|-----------|
-| `interstitial_rate`         | ≥ 0.99   | 1.0000 (200/200) | **PASS** |
-| `cold_interstitial_rate`    | reported | 100.0% (40/40)       | reported  |
+| `interstitial_rate`         | ≥ 0.99   | 0.9950 (199/200) | **PASS** |
+| `cold_interstitial_rate`    | reported | 97.5% (39/40)       | reported  |
 | `warm_interstitial_rate`    | reported | 100.0% (160/160)       | reported  |
+| `cold_start_p95`            | < 150 ms | 47.0 ms | reported  |
+| `warm_p95`                  | < 30 ms  | 47.0 ms | reported  |
 
 **Verdict: PASS**
-Interstitial rate 100.0% meets the ≥ 99% gate (FR-09, E2E-10). Block enforcement is reliable at this sample size.
+Interstitial rate 99.5% meets the ≥ 99% gate (FR-09, E2E-10). Block enforcement is reliable at this sample size.
 
 ---
 
@@ -24,10 +26,10 @@ Interstitial rate 100.0% meets the ≥ 99% gate (FR-09, E2E-10). Block enforceme
 
 | Signal           | Value | Meaning |
 |------------------|-------|---------|
-| Interstitial shown (browser-side `page.url`) | 200 | Extension won — `warning.html` committed |
-| Target committed  (browser-side `page.url`) | 0 | Target page committed before interstitial |
-| Route no-fetch (target URL never fetched)   | 3 | Consistent with extension winning |
-| Route fetched  (target URL was fetched)      | 197 | Target was fetched (may still show interstitial) |
+| Interstitial shown (browser-side `page.url`) | 199 | Extension won — `warning.html` committed |
+| Target committed  (browser-side `page.url`) | 1 | Target page committed before interstitial |
+| Route no-fetch (target URL never fetched)   | 0 | Consistent with extension winning |
+| Route fetched  (target URL was fetched)      | 200 | Target was fetched (may still show interstitial) |
 
 ---
 

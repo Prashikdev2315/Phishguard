@@ -11,7 +11,7 @@ const rows = readFileSync(resolve(root, "data/splits/test.csv"), "utf8")
 const model = loadModel(readFileSync(resolve(root, "extension/public/model.bin")));
 const result = rows.map((url) => {
   const normalized = normalize(url);
-  const vector = Float32Array.from(Object.values(extractFeatures(url)));
+  const vector = Float64Array.from(Object.values(extractFeatures(url)));
   const verdict = predictRisk(model, vector);
   return { url, normalized, vector: Array.from(vector), risk: verdict.risk, probability: verdict.probability };
 });
